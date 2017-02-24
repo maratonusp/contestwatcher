@@ -2,6 +2,8 @@ const codeforces = require('./codeforces');
 const codechef = require('./codechef');
 const topcoder = require('./topcoder');
 const csacademy = require('./csacademy');
+const alerts = require('../alerts');
+
 const Semaphore = require('async-semaphore');
 
 var updateMerge_semaphore = new Semaphore(1, true);
@@ -45,6 +47,7 @@ const updateMerge = function (judge_name, current, adding) {
       current.push(adding[j]);
       j++;
     }
+    alerts.reset_alerts(current);
     updateMerge_semaphore.release();
   });
 };
