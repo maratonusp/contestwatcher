@@ -1,0 +1,26 @@
+{
+  "name": "contestwatcher",
+  "version": "1.0.0",
+  "description": "Watches online judges for contests",
+  "main": "server.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "competitive",
+    "programming",
+    "codeforces",
+    "topcoder",
+    "codechef",
+    "csacademy"
+  ],
+  "author": "victorsenam <victorsenam@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "async-semaphore": "^2.0.0",
+    "dateformat": "^2.0.0",
+    "node-telegram-bot": "^0.1.9"
+  }
+}
