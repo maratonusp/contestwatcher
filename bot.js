@@ -1,6 +1,8 @@
+const fs = require('fs');
 const Bot = require('node-telegram-bot');
 const dateformat = require('dateformat');
 const process = require('process');
+
 
 const formatMessage = (upcoming) => {
   const maxContests = 7;
@@ -15,7 +17,7 @@ const formatMessage = (upcoming) => {
       result +=
         dateformat(entry.time, "dd mmm yyyy HH:mm") + " | " + 
         "[" + entry.name + "](" + entry.url + ") " + 
-        "(" + (d / 60) + "h" + (d % 60 == 0? "" : (d % 60).toString())+ ")" +
+        "(" + Math.floor(d / 60) + "h" + (d % 60 == 0? "" : (d % 60 < 10? "0" : "") + (d % 60).toString())+ ")" +
         "  \n";
     }
   });
@@ -26,12 +28,30 @@ const formatMessage = (upcoming) => {
   return result;
 }
 
+const save_users = function(users) {
+  console.log("Saving " + Object.keys(users).length + " users.");
+  fs.writeFileSync("./users.json", JSON.stringify(Object.keys(users)));
+};
+
 let last_refresh = new Date(0);
 
 module.exports = {
   registered_users: {},
   create_bot: (upcoming, judgefetcher) => {
     const bot = new Bot({token: process.env.TELEGRAM_TOKEN});
+
+    try {
+      const data = fs.readFileSync('./users.json');
+      if (data) {
+        const users = JSON.parse(data.toString());
+        users.forEach((user) => {
+          module.exports.registered_users[user] = true;
+        });
+        console.log("Reading " + users.length + " users.");
+      }
+    } catch(e) {
+      console.log('Could not read users.json');
+    }
 
     bot.on('error', (err) => {
       console.log('Bot Error: ' + err.message);
@@ -58,10 +78,12 @@ module.exports = {
       module.exports.registered_users[message.chat.id] = true;
       send(message, "You have been registered and will receive reminders for the contests! Use /stop if you don't want to receive reminders anymore.");
       console.log("Registering user " + message.chat.id);
+      save_users(module.exports.registered_users);
     }).on('stop', (message) => {
       delete module.exports.registered_users[message.chat.id];
       send(message, "You will no longer receive reminders for the contests :(. Use /start if you want to receive reminders again.");
       console.log("Deleting user " + message.chat.id);
+      save_users(module.exports.registered_users);
     }).on('help', (message) => {
       send(message, "Hello, I am ContestWatcher Bot :D. I list programming contests from Codeforces, Topcoder, Codechef and CSAcademy.\n\n" +
            "You can control me by sending these commands: \n\n" +
@@ -70,7 +92,6 @@ module.exports = {
            "/upcoming - show the next scheduled contests.\n" +
            "/refresh - resfresh the contest list. This is done automatically once per day.\n" +
            "/help - shows this help message.");
-
       });
 
     bot.start();

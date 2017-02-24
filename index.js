@@ -18,7 +18,6 @@ rule.minute = 0;
 rule.second = 0;
 schedule.scheduleJob(rule, () => { judge.updateUpcoming(upcoming); });
 
-
 // bot
 bot.create_bot(upcoming, judge);
 
