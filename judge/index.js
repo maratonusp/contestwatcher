@@ -1,12 +1,14 @@
 const codeforces = require('./codeforces');
 const codechef = require('./codechef');
+const topcoder = require('./topcoder');
 const Semaphore = require('async-semaphore');
 
 var updateMerge_semaphore = new Semaphore(1, true);
 
 var spec_upcoming = {
   codeforces: [],
-  codechef: []
+  codechef: [],
+  topcoder: []
 };
 
 const updateMerge = function (judge_name, current, adding) {
@@ -48,9 +50,10 @@ const updateMerge = function (judge_name, current, adding) {
 module.exports = {
   updateUpcoming: (upcoming) => {
     codeforces.updateUpcoming(spec_upcoming.codeforces)
-      .on('end', () => { updateMerge('codeforces', upcoming, spec_upcoming.codeforces); } );
-
+      .on('end', () => { updateMerge('codeforces', upcoming, spec_upcoming.codeforces); });
     codechef.updateUpcoming(spec_upcoming.codechef)
       .on('end', () => { updateMerge('codechef', upcoming, spec_upcoming.codechef); });
+    topcoder.updateUpcoming(spec_upcoming.topcoder)
+      .on('end', () => { updateMerge('topcoder', upcoming, spec_upcoming.topcoder); });
   }
 };
