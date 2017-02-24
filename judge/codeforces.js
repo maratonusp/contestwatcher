@@ -17,7 +17,7 @@ module.exports = {
         res.resume(); // free
         return;
       }
-      
+
       res.setEncoding('utf8');
 
       let rawData = '';

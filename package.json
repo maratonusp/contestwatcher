@@ -21,6 +21,7 @@
   "dependencies": {
     "async-semaphore": "^2.0.0",
     "dateformat": "^2.0.0",
+    "jsdom": "^9.11.0",
     "node-telegram-bot": "^0.1.9"
   }
 }
