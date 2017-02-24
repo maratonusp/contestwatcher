@@ -1,5 +1,6 @@
 const Bot = require('node-telegram-bot');
 const dateformat = require('dateformat');
+const process = require('process');
 
 const formatMessage = (upcoming) => {
   var result = "";
@@ -15,7 +16,7 @@ const formatMessage = (upcoming) => {
 }
 
 module.exports = (upcoming) => {
-  const bot = new Bot({token: '378707423:AAE_keAPD3pjfJgiyBpp678iZP4dXdcBLRM'});
+  const bot = new Bot({token: process.env.TELEGRAM_TOKEN});
 
   bot.on('message', function (message) {
     if (message.text == '/upcoming') {
