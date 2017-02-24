@@ -3,14 +3,24 @@ const dateformat = require('dateformat');
 const process = require('process');
 
 const formatMessage = (upcoming) => {
+  const maxContests = 7;
+  var validContests = 0;
   var result = "";
 
   upcoming.forEach( (entry) => {
-    result += 
-      dateformat(entry.time, "HH:MM dd mmm yyyy") + " | " + 
-      "[" + entry.name + "](" + entry.url + ")" + 
-      "  \n";
+    validContests++;
+
+    if (validContests <= maxContests) {
+      result +=
+        dateformat(entry.time, "dd mmm yyyy HH:mm") + " | " + 
+        "[" + entry.name + "](" + entry.url + ") " + 
+        "(" + (entry.duration/60) + "min)" + 
+        "  \n";
+    }
   });
+
+  if (maxContests < validContests)
+    result += "And other " + (validContests - maxContests) + " scheduled after those...";
 
   return result;
 }
