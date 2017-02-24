@@ -36,45 +36,42 @@ module.exports = {
     bot.on('error', (err) => {
       console.log('Bot Error: ' + err.message);
     });
+    const send = function(msg, txt) {
+      bot.sendMessage({
+        chat_id: msg.chat.id,
+        text: txt,
+        parse_mode: 'Markdown'
+      });
+    };
 
-
-    bot.on('message', function (message) {
-      const send = function(msg) {
-        bot.sendMessage({
-          chat_id: message.from.id,
-          text: msg,
-          parse_mode: 'Markdown'
-        });
-      };
-      if (message.text == '/upcoming') {
-        send(formatMessage(upcoming));
-      } else if (message.text == '/refresh') {
-        if (Date.now() - last_refresh < 1000 * 60 * 10) {
-          send("Contest list was refreshed less than 10 minutes ago.");
-        } else {
-          send("Refreshing contest list... Please wait a bit before using /upcoming.");
-          judgefetcher.updateUpcoming(upcoming);
-          last_refresh = Date.now();
-        }
-      } else if (message.text == '/start') {
-        module.exports.registered_users[message.from.id] = true;
-        send("You have been registered and will receive reminders for the contests! Use /stop if you don't want to receive reminders anymore.");
-        console.log("Registering user " + message.from.id);
-      } else if (message.text == '/stop') {
-        delete module.exports.registered_users[message.from.id];
-        send("You will no longer receive reminders for the contests :(. Use /start if you want to receive reminders again.");
-        console.log("Deleting user " + message.from.id);
-      } else if (message.text == '/help') {
-        send("Hello, I am ContestWatcher Bot :D. I list programming contests from Codeforces, Topcoder, Codechef and CSAcademy.\n\n" +
-             "You can control me by sending these commands: \n\n" +
-             "/start - Start receiving reminders before the contests. I'll send a reminder 1 day and another 1 hour before each contest.\n" +
-             "/stop - Stop receiving reminders.\n" +
-             "/upcoming - show the next scheduled contests.\n" +
-             "/refresh - resfresh the contest list. This is done automatically once per day.\n" +
-             "/help - shows this help message.");
-
+    bot.on('upcoming', (message) => {
+      send(message, formatMessage(upcoming));
+    }).on('refresh', (message) => {
+      if (Date.now() - last_refresh < 1000 * 60 * 10) {
+        send(message, "Contest list was refreshed less than 10 minutes ago.");
+      } else {
+        send(message, "Refreshing contest list... Please wait a bit before using /upcoming.");
+        judgefetcher.updateUpcoming(upcoming);
+        last_refresh = Date.now();
       }
-    });
+    }).on('start', (message) => {
+      module.exports.registered_users[message.chat.id] = true;
+      send(message, "You have been registered and will receive reminders for the contests! Use /stop if you don't want to receive reminders anymore.");
+      console.log("Registering user " + message.chat.id);
+    }).on('stop', (message) => {
+      delete module.exports.registered_users[message.chat.id];
+      send(message, "You will no longer receive reminders for the contests :(. Use /start if you want to receive reminders again.");
+      console.log("Deleting user " + message.chat.id);
+    }).on('help', (message) => {
+      send(message, "Hello, I am ContestWatcher Bot :D. I list programming contests from Codeforces, Topcoder, Codechef and CSAcademy.\n\n" +
+           "You can control me by sending these commands: \n\n" +
+           "/start - Start receiving reminders before the contests. I'll send a reminder 1 day and another 1 hour before each contest.\n" +
+           "/stop - Stop receiving reminders.\n" +
+           "/upcoming - show the next scheduled contests.\n" +
+           "/refresh - resfresh the contest list. This is done automatically once per day.\n" +
+           "/help - shows this help message.");
+
+      });
 
     bot.start();
     module.exports.bot = bot;
