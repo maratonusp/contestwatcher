@@ -18,6 +18,10 @@ const formatMessage = (upcoming) => {
 module.exports = (upcoming) => {
   const bot = new Bot({token: process.env.TELEGRAM_TOKEN});
 
+  bot.on('error', (err) => {
+    console.log('Bot Error: ' + err.message);
+  });
+
   bot.on('message', function (message) {
     if (message.text == '/upcoming') {
       bot.sendMessage({
