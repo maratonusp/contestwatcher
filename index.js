@@ -7,10 +7,9 @@ const port = 3000;
 // fetcher
 var upcoming = [];
 judge.updateUpcoming(upcoming);
-setInterval( () => { judge.updateUpcoming(upcoming) }, 1000*60*5);
 
 // bot
-const bot = require('./bot')(upcoming);
+const bot = require('./bot')(upcoming, judge);
 
 // server
 const server = http.createServer((req, res) => {

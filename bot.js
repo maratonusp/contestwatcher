@@ -15,7 +15,7 @@ const formatMessage = (upcoming) => {
   return result;
 }
 
-module.exports = (upcoming) => {
+module.exports = (upcoming, judgefetcher) => {
   const bot = new Bot({token: process.env.TELEGRAM_TOKEN});
 
   bot.on('error', (err) => {
@@ -29,7 +29,10 @@ module.exports = (upcoming) => {
         text: formatMessage(upcoming),
         parse_mode: 'Markdown'
       });
+    } else if (message.text == '/refresh') {
+      judgefetcher.updateUpcoming(upcoming);
     }
+
   });
 
   bot.start();
