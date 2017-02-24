@@ -22,10 +22,10 @@ const updateMerge = function (judge_name, current, adding) {
     var old = Array.from(current);
     current.length = 0;
 
-    while (i < old.length && j < adding.length) {
-      if (old[i].judge === judge_name) {
+    while (i < old.length || j < adding.length) {
+      if (i < old.length && old[i].judge === judge_name) {
         i++;
-      } else if (old[i].time < adding[j].time) {
+      } else if (j == adding.length || (i < old.length && old[i].time < adding[j].time)) {
         current.push(old[i]);
         i++;
       } else {
@@ -34,19 +34,6 @@ const updateMerge = function (judge_name, current, adding) {
       }
     }
 
-    while (i < old.length) {
-      if (old[i].judge === judge_name) {
-        i++;
-      } else {
-        current.push(old[i]);
-        i++;
-      }
-    }
-
-    while (j < adding.length) {
-      current.push(adding[j]);
-      j++;
-    }
     alerts.reset_alerts(current);
     updateMerge_semaphore.release();
   });

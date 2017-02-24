@@ -9,13 +9,13 @@ module.exports = {
         ["http://code.jquery.com/jquery.js"],
         (err, window) => {
           if (err) {
-            console.log("Failed on CSAcademy.");
+            console.log("Failed on CodeChef.");
             res.resume();
             return;
           }
           const $ = window.$
           const list = $("table.dataTable:eq(1)").children('tbody').children()
-          upcoming.lenght = 0;
+          upcoming.length = 0;
           list.find('a').each((i, x) => {
             if (/Challenge|Cook|Lunchtime/.test(x.text)) {
               const contest = list.eq(i).children(); // contest to be added
