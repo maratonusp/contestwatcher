@@ -3,3 +3,4 @@ node_modules
 **/*.swo
 **/*.lvimrc
 users.json
+npm-debug.log
