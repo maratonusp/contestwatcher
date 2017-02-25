@@ -1,11 +1,14 @@
 const http = require('http');
 const schedule = require('node-schedule');
+const process = require('process');
+const url = require('url');
+const fs = require('fs');
 
 const judge = require('./judge/index');
 const bot = require('./bot');
 
-const hostname = '127.0.0.1';
-const port = 3000;
+const hostname = 'localhost';
+const port = (process.env.PORT || 3000);
 
 // fetcher
 var upcoming = [];
@@ -23,7 +26,17 @@ bot.create_bot(upcoming, judge);
 
 // server
 const server = http.createServer((req, res) => {
-  res.end(JSON.stringify(upcoming));
+  var reqpath = url.parse(req.url, true).pathname;
+  if (reqpath == '/log') {
+    fs.readFile('./run.log', 'utf8', function (err, data) {
+      if (err)
+        res.end('ERROR: Could not read log.');
+      else
+        res.end(data);
+    });
+  } else {
+    res.end(JSON.stringify(upcoming));
+  }
 });
 
 server.listen(port, hostname, () => {

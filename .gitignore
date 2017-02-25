@@ -4,3 +4,4 @@ node_modules
 **/*.lvimrc
 users.json
 npm-debug.log
+run.log
