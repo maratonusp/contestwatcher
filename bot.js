@@ -1,8 +1,7 @@
 const fs = require('fs');
-const Bot = require('node-telegram-bot');
+const Bot = require('node-telegram-bot-api');
 const dateformat = require('dateformat');
 const process = require('process');
-
 
 const formatMessage = (upcoming) => {
   const maxContests = 7;
@@ -15,8 +14,8 @@ const formatMessage = (upcoming) => {
     if (validContests <= maxContests) {
       const d = entry.duration / 60
       result +=
-        dateformat(entry.time, "dd mmm yyyy HH:mm") + " | " + 
-        "[" + entry.name + "](" + entry.url + ") " + 
+        dateformat(entry.time, "dd mmm yyyy HH:mm") + " | " +
+        "[" + entry.name + "](" + entry.url + ") " +
         "(" + Math.floor(d / 60) + "h" + (d % 60 == 0? "" : (d % 60 < 10? "0" : "") + (d % 60).toString())+ ")" +
         "  \n";
     }
@@ -38,7 +37,7 @@ let last_refresh = new Date(0);
 module.exports = {
   registered_users: {},
   create_bot: (upcoming, judgefetcher) => {
-    const bot = new Bot({token: process.env.TELEGRAM_TOKEN});
+    const bot = new Bot(process.env.TELEGRAM_TOKEN, {polling: true});
 
     try {
       const data = fs.readFileSync('./users.json');
@@ -53,20 +52,14 @@ module.exports = {
       console.log('Could not read users.json');
     }
 
-    bot.on('error', (err) => {
-      console.log('Bot Error: ' + err.message);
-    });
     const send = function(msg, txt) {
-      bot.sendMessage({
-        chat_id: msg.chat.id,
-        text: txt,
-        parse_mode: 'Markdown'
-      });
+      bot.sendMessage(msg.chat.id, txt, {parse_mode: 'Markdown'});
     };
 
-    bot.on('upcoming', (message) => {
+    bot.onText(/^\/upcoming(@\w+)*$/, (message) => {
       send(message, formatMessage(upcoming));
-    }).on('refresh', (message) => {
+    });
+    bot.onText(/^\/refresh(@\w+)*$/, (message) => {
       if (Date.now() - last_refresh < 1000 * 60 * 10) {
         send(message, "Contest list was refreshed less than 10 minutes ago.");
       } else {
@@ -74,17 +67,20 @@ module.exports = {
         judgefetcher.updateUpcoming(upcoming);
         last_refresh = Date.now();
       }
-    }).on('start', (message) => {
-      module.exports.registered_users[message.chat.id] = true;
+    });
+    bot.onText(/^\/start(@\w+)*$/, (message) => {
+      module.exports.registered_users[message.from.id] = true;
       send(message, "You have been registered and will receive reminders for the contests! Use /stop if you don't want to receive reminders anymore.");
-      console.log("Registering user " + message.chat.id);
+      console.log("Registering user " + message.from.id);
       save_users(module.exports.registered_users);
-    }).on('stop', (message) => {
-      delete module.exports.registered_users[message.chat.id];
+    });
+    bot.onText(/^\/stop(@\w+)*$/m, (message) => {
+      delete module.exports.registered_users[message.from.id];
       send(message, "You will no longer receive reminders for the contests :(. Use /start if you want to receive reminders again.");
-      console.log("Deleting user " + message.chat.id);
+      console.log("Deleting user " + message.from.id);
       save_users(module.exports.registered_users);
-    }).on('help', (message) => {
+    });
+    bot.onText(/^\/help(@\w+)*$/, (message) => {
       send(message, "Hello, I am ContestWatcher Bot :D. I list programming contests from Codeforces, Topcoder, Codechef and CSAcademy.\n\n" +
            "You can control me by sending these commands: \n\n" +
            "/start - Start receiving reminders before the contests. I'll send a reminder 1 day and another 1 hour before each contest.\n" +
@@ -92,9 +88,11 @@ module.exports = {
            "/upcoming - show the next scheduled contests.\n" +
            "/refresh - resfresh the contest list. This is done automatically once per day.\n" +
            "/help - shows this help message.");
-      });
+    });
+    bot.onText(/^\/hue(@\w+)*$/, (message) => {
+        bot.sendAudio(message.chat.id, 'audio/gas.ogg');
+    });
 
-    bot.start();
     module.exports.bot = bot;
   }
 };
