@@ -7,7 +7,8 @@
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js 2>&1 | tee run.log"
+    "start": "npm run-script run",
+    "run": "node index.js 2>&1 | tee run.log"
   },
   "keywords": [
     "competitive",
