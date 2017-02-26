@@ -88,15 +88,15 @@ module.exports = {
       }
     });
     bot.onText(/^\/start(@\w+)*$/, (message) => {
-      module.exports.registered_users[message.from.id] = true;
+      module.exports.registered_users[message.chat.id] = true;
       send(message, "You have been registered and will receive reminders for the contests! Use /stop if you don't want to receive reminders anymore.");
-      console.log("Registering user " + message.from.id);
+      console.log("Registering user " + message.chat.id);
       save_users(module.exports.registered_users);
     });
     bot.onText(/^\/stop(@\w+)*$/m, (message) => {
-      delete module.exports.registered_users[message.from.id];
+      delete module.exports.registered_users[message.chat.id];
       send(message, "You will no longer receive reminders for the contests :(. Use /start if you want to receive reminders again.");
-      console.log("Deleting user " + message.from.id);
+      console.log("Deleting user " + message.chat.id);
       save_users(module.exports.registered_users);
     });
     bot.onText(/^\/help(@\w+)*$/, (message) => {
