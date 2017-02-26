@@ -2,12 +2,12 @@
   "name": "contestwatcher",
   "version": "1.0.0",
   "description": "Watches online judges for contests",
-  "main": "server.js",
+  "main": "index.js",
   "repository": "victorsenam/contestwatcher",
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node index.js |& tee run.log"
   },
   "keywords": [
     "competitive",
@@ -24,6 +24,7 @@
     "dateformat": "^2.0.0",
     "ical": "^0.5.0",
     "jsdom": "^9.11.0",
+    "moment-timezone": "^0.5.11",
     "node-schedule": "^1.2.0",
     "node-telegram-bot-api": "^0.27.0"
   }

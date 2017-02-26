@@ -3,6 +3,24 @@ const Bot = require('node-telegram-bot-api');
 const dateformat = require('dateformat');
 const process = require('process');
 
+const num = (x, pos) => {
+  x = Math.floor(x)
+  if (x == 0) return "";
+  return x + pos;
+};
+
+// returns the timeanddate link for given date
+const time_link = (name, d) => {
+  return "https://www.timeanddate.com/worldclock/fixedtime.html?" +
+    "msg=" + encodeURIComponent(name) +
+    "&year=" + d.getUTCFullYear() +
+    "&month=" + (d.getUTCMonth() + 1).toString() +
+    "&day=" + d.getUTCDate() +
+    "&hour=" + d.getUTCHours() +
+    "&min=" + d.getUTCMinutes() +
+    "&sec=" + d.getUTCSeconds();
+};
+
 const formatMessage = (upcoming) => {
   const maxContests = 7;
   var validContests = 0;
@@ -13,11 +31,12 @@ const formatMessage = (upcoming) => {
 
     if (validContests <= maxContests) {
       const d = entry.duration / 60
+      const min = Math.ceil((entry.time.getTime() - Date.now()) / (1000 * 60))
       result +=
-        dateformat(entry.time, "dd mmm yyyy HH:mm") + " | " +
-        "[" + entry.name + "](" + entry.url + ") " +
-        "(" + Math.floor(d / 60) + "h" + (d % 60 == 0? "" : (d % 60 < 10? "0" : "") + (d % 60).toString())+ ")" +
-        "  \n";
+        '<a href="' + entry.url + '">' + entry.name + "</a> " +
+        "(" + Math.floor(d / 60) + "h" + (d % 60 == 0? "" : (d % 60 < 10? "0" : "") + (d % 60).toString())+ ")\n" +
+        "starts in <a href=\"" + time_link(entry.name, entry.time) + '">' +  num(min / (60 * 24), 'd ') + num((min / 60) % 24, 'h ') + (min % 60).toString() + "m</a>" +
+        "\n\n";
     }
   });
 
@@ -53,7 +72,7 @@ module.exports = {
     }
 
     const send = function(msg, txt) {
-      bot.sendMessage(msg.chat.id, txt, {parse_mode: 'Markdown'});
+      bot.sendMessage(msg.chat.id, txt, {parse_mode: 'html', disable_web_page_preview: true});
     };
 
     bot.onText(/^\/upcoming(@\w+)*$/, (message) => {

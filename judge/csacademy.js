@@ -35,19 +35,19 @@ module.exports = {
               continue;
             if (el.startTime == null)
               continue;
-            
+
             var entry = {
               judge: 'csacademy',
               name: el.longName,
               url: 'https://csacademy.com/contest/' + el.name,
-              time: new Date(el.startTime*1000),
-              duration: Math.floor((new Date(el.endTime) - new Date(el.startTime)).valueOf()/1000 + 1e-8)
+              time: new Date(el.startTime * 1000),
+              duration: el.endTime - el.startTime
             };
 
             if (entry.time >= Date.now())
               upcoming.push(entry);
           }
-          
+
           upcoming.sort( (a,b) => { return a.time - b.time; });
 
           emitter.emit('end');

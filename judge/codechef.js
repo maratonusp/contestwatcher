@@ -1,5 +1,6 @@
 const jsdom = require('jsdom')
 const EventEmitter = require('events');
+const moment = require('moment-timezone')
 
 module.exports = {
   updateUpcoming: (upcoming) => {
@@ -19,8 +20,8 @@ module.exports = {
           list.find('a').each((i, x) => {
             if (/Challenge|Cook|Lunchtime/.test(x.text)) {
               const contest = list.eq(i).children(); // contest to be added
-              const start = new Date(contest.filter('.start_date').text());
-              const end = new Date(contest.filter('.end_date').text());
+              const start = moment.tz(contest.filter('.start_date').text(), 'Asia/Colombo').toDate();
+              const end = moment.tz(contest.filter('.end_date').text(), 'Asia/Colombo').toDate();
               upcoming.push({
                 judge: 'codechef',
                 name: x.text,

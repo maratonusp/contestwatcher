@@ -22,7 +22,7 @@ module.exports = {
               name: el.summary,
               url: 'http://topcoder.com/',
               time: new Date(el.start),
-              duration: Math.floor((new Date(el.end) - new Date(el.start)).valueOf()/1000 + 1e-8)
+              duration: (el.end - el.start) / 1000
             };
 
             if (entry.time >= Date.now())

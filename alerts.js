@@ -12,11 +12,7 @@ const alerts = module.exports = {}
 
 warn = function (ev, left) {
   for (const id in bot.registered_users) {
-    bot.bot.sendMessage({
-      chat_id: id,
-      text: '[' + ev.name + '](' + ev.url + ') will start in ' + left + '.',
-      parse_mode: 'Markdown'
-    });
+    bot.bot.sendMessage(id, '[' + ev.name + '](' + ev.url + ') will start in ' + left + '.', { parse_mode: 'Markdown', disable_web_page_preview: true });
   }
 };
 
