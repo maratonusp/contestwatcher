@@ -30,8 +30,7 @@ const server = http.createServer((req, res) => {
   if (reqpath == '/log') {
     fs.readFile('./run.log', 'utf8', function (err, data) {
       if (err)
-        res.end('ERROR: Could not read log.');
-        res.end(err);
+        res.end('ERROR: Could not read log.' + err);
       else
         res.end(data);
     });
