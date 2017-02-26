@@ -10,6 +10,13 @@ const bot = require('./bot');
 const hostname = 'localhost';
 const port = (process.env.PORT || 3000);
 
+const old_log = console.log
+
+console.log = (str) => {
+  fs.appendFile('run.log', str.toString() + '\n', function (err) {});
+  old_log(str);
+}
+
 // fetcher
 var upcoming = [];
 judge.updateUpcoming(upcoming);
