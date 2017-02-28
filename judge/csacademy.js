@@ -22,6 +22,7 @@ module.exports = {
 
       let rawData = '';
 
+      upcoming.length = 0
       res.on('data', (chunk) => rawData += chunk);
       res.on('end', () => {
         try {
