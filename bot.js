@@ -27,6 +27,9 @@ const formatMessage = (upcoming) => {
   var result = "";
 
   upcoming.forEach( (entry) => {
+    if (entry.time < Date.now())
+      return;
+
     validContests++;
 
     if (validContests <= maxContests) {
