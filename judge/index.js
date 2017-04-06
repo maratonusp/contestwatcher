@@ -2,6 +2,7 @@ const codeforces = require('./codeforces');
 const codechef = require('./codechef');
 const topcoder = require('./topcoder');
 const csacademy = require('./csacademy');
+const calendar = require('./calendar');
 const alerts = require('../alerts');
 
 const Semaphore = require('async-semaphore');
@@ -12,7 +13,8 @@ var spec_upcoming = {
   codeforces: [],
   codechef: [],
   topcoder: [],
-  csacademy: []
+  csacademy: [],
+  calendar: []
 };
 
 const updateMerge = function (judge_name, current, adding) {
@@ -49,5 +51,7 @@ module.exports = {
       .on('end', () => { updateMerge('topcoder', upcoming, spec_upcoming.topcoder); });
     csacademy.updateUpcoming(spec_upcoming.csacademy)
       .on('end', () => { updateMerge('csacademy', upcoming, spec_upcoming.csacademy); });
+    calendar.updateUpcoming(spec_upcoming.calendar)
+      .on('end', () => { updateMerge('calendar', upcoming, spec_upcoming.calendar); });
   }
 };
