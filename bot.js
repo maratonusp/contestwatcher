@@ -46,6 +46,9 @@ const formatMessage = (upcoming) => {
   if (maxContests < validContests)
     result += "And other " + (validContests - maxContests) + " scheduled after those...";
 
+  if (result == "")
+    result = "No upcoming contests :(";
+
   return result;
 }
 
