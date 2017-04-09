@@ -1,5 +1,6 @@
 const schedule = require('node-schedule');
 const bot = require('./bot');
+const db = require('./db');
 
 const event_handlers = []
 
@@ -11,9 +12,13 @@ const day = 24 * hour;
 const alerts = module.exports = {}
 
 warn = function (ev, left) {
-  for (const id in bot.registered_users) {
-    bot.bot.sendMessage(id, '[' + ev.name + '](' + ev.url + ') will start in ' + left + '.', { parse_mode: 'Markdown', disable_web_page_preview: true });
-  }
+  db.get('users').forEach({}, function (user, key) {
+    var message = '[' + ev.name + '](' + ev.url + ') will start in ' + left + '.';
+    bot.bot.sendMessage(user.id, message, {
+      parse_mode: 'Markdown', 
+      disable_web_page_preview: true 
+    });
+  });
 };
 
 alerts.reset_alerts = function(upcoming) {

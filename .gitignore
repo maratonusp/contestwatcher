@@ -3,5 +3,6 @@ node_modules
 **/*.swo
 **/*.lvimrc
 users.json
+db.json
 npm-debug.log
 run.log
