@@ -78,8 +78,8 @@ module.exports = {
 
     bot.onText(/^\/start(@\w+)*$/, (message) => {
       var response = "";
-      db.read();
-      var users = db.get('users');
+      db.low.read();
+      var users = db.low.get('users');
       if (users.find({ id : message.chat.id }).value() !== undefined) {
         response = "Looks like you're already registered for reminders. ";
       } else {
@@ -94,7 +94,7 @@ module.exports = {
     });
 
     bot.onText(/^\/stop(@\w+)*$/m, (message) => {
-      var users = db.get('users');
+      var users = db.low.get('users');
       var response = "";
       if (users.find({ id : message.chat.id }).value() === undefined) {
         response += "You are not currently receiving reminders. ";
@@ -116,7 +116,7 @@ module.exports = {
         response = "No judge specified.";
       } else {
         var judge = pars[1];
-        var user = db
+        var user = db.low
           .get('users')
           .find({ id: message.chat.id });
         if (user.value() === undefined) {
@@ -147,7 +147,7 @@ module.exports = {
         response = "No judge specified.";
       } else {
         var judge = pars[1];
-        var user = db
+        var user = db.low
           .get('users')
           .find({ id: message.chat.id });
         if (user.value() === undefined) {

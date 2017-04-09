@@ -14,7 +14,7 @@ const alerts = module.exports = {}
 warn = function (ev, left) {
   var filter_par = { ignore: {} }
   filter_par.ignore[ev.judge] = true;
-  db
+  db.low
     .get('users')
     .reject(filter_par)
     .map('id')

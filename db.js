@@ -4,3 +4,4 @@ const db = low('db.json', {
 })
 
 module.exports = db;
+module.exports = {low: db};
