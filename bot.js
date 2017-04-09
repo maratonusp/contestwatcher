@@ -78,25 +78,105 @@ module.exports = {
 
     bot.onText(/^\/start(@\w+)*$/, (message) => {
       var response = "";
-      const users = db.get('users');
-      if (!users.find({ id : message.chat.id }).isUndefined()) {
+      db.read();
+      var users = db.get('users');
+      if (users.find({ id : message.chat.id }).value() !== undefined) {
         response = "Looks like you're already registered for reminders. ";
       } else {
         users
-          .push({ id : message.chat.id, ignore: ['calendar'] })
+          .push({ id : message.chat.id, notify: true, ignore: {'calendar': true} })
           .write();
-        response = "You have been registered and will receive reminders for the contests!";
+        response = "You have been registered and will receive reminders for the contests! ";
+        console.log("Registering user " + message.chat.id);
       }
-      console.log("Registering user " + message.chat.id);
+      response += "Use /stop if you want to stop receiving reminders.";
       send(message, response);
     });
 
     bot.onText(/^\/stop(@\w+)*$/m, (message) => {
-      db.get('users')
-        .remove({ id : message.chat.id })
-        .write();
-      console.log("Deleting user " + message.chat.id);
-      send(message, "You will no longer receive reminders for the contests :(. Use /start if you want to receive reminders again.");
+      var users = db.get('users');
+      var response = "";
+      if (users.find({ id : message.chat.id }).value() === undefined) {
+        response += "You are not currently receiving reminders. ";
+      } else {
+        response += "You will no longer receive reminders for the contests :(. ";
+        users
+          .remove({ id : message.chat.id })
+          .write();
+        console.log("Deleting user " + message.chat.id);
+      }
+      response += "Use /start if you want to receive reminders again.";
+      send(message, response);
+    });
+
+    bot.onText(/^\/enable(@\w+)*/m, (message) => {
+      var pars = message.text.split(' ');
+      var response = "";
+      if (pars.length < 2) {
+        response = "No judge specified.";
+      } else {
+        var judge = pars[1];
+        var user = db
+          .get('users')
+          .find({ id: message.chat.id });
+        if (user.value() === undefined) {
+          response = "Use /start to receive reminders.";
+        } else {
+          var ignored = user
+            .has('ignore.' + judge)
+            .value();
+          if (ignored) {
+            user
+              .unset('ignore.' + judge)
+              .write();
+            response = "Ok! Now this judge no longer ignored for you!";
+            console.log("Enable " + judge + " on " + message.chat.id);
+          } else {
+            response = "You are not ignoring this judge.";
+          }
+        }
+      }
+
+      send(message, response);
+    });
+
+    bot.onText(/^\/disable(@\w+)*/m, (message) => {
+      var pars = message.text.split(' ');
+      var response = "";
+      if (pars.length < 2) {
+        response = "No judge specified.";
+      } else {
+        var judge = pars[1];
+        var user = db
+          .get('users')
+          .find({ id: message.chat.id });
+        if (user.value() === undefined) {
+          response = "Use /start to receive reminders.";
+        } else {
+          var ignored = user
+            .has('ignore.' + judge)
+            .value();
+          if (ignored) {
+            response = "You are already ignoring this judge.";
+          } else {
+            user.set('ignore.' + judge, true)
+              .write();
+            response = "Ok! Now this judge is ignored for you!";
+            console.log("Disable " + judge + " on " + message.chat.id);
+          }
+        }
+      }
+
+      send(message, response);
+    });
+
+    bot.onText(/^\/judges(@\w+)*$/m, (message) => {
+      send(message, "You can /enable or /disable judges with the commands as you wish. Try typing /enable calendar. The currently supperted judges are: \n\n" +
+        "codeforces : codeforces.com" + "\n" + 
+        "topcoder : topcoder.com" + "\n" +
+        "codechef : codechef.com" + "\n" +
+        "csacademy : csacademy.com" + "\n" +
+        "calendar : manually inputed by the creators of the bot (codejam, yandex, local events, etc)" + "\n");
     });
 
     bot.onText(/^\/help(@\w+)*$/, (message) => {
@@ -105,7 +185,10 @@ module.exports = {
            "/start - Start receiving reminders before the contests. I'll send a reminder 1 day and another 1 hour before each contest.\n" +
            "/stop - Stop receiving reminders.\n" +
            "/upcoming - show the next scheduled contests.\n" +
-           "/refresh - resfresh the contest list. This is done automatically once per day.\n" +
+           "/refresh - refresh the contest list. This is done automatically once per day.\n" +
+           "/judges - list supported judges.\n" +
+           "/enable <judge> - enable notifications for some judge.\n" +
+           "/disable <judge> - disable notifications for some judge.\n" +
            "/help - shows this help message.");
     });
 

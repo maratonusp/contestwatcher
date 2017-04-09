@@ -3,5 +3,4 @@ const db = low('db.json', {
   storage: require('lowdb/lib/storages/file-async')
 })
 
-
 module.exports = db;
