@@ -78,34 +78,36 @@ module.exports = {
 
     bot.onText(/^\/start(@\w+)*$/, (message) => {
       var response = "";
-      db.low.read();
-      var users = db.low.get('users');
-      if (users.find({ id : message.chat.id }).value() !== undefined) {
+
+      var id = message.chat.id;
+      var user = db.user.get(id);
+
+      if (user.get('notify').value() === true) {
         response = "Looks like you're already registered for reminders. ";
       } else {
-        users
-          .push({ id : message.chat.id, notify: true, ignore: {'calendar': true} })
+        user
+          .set('notify', true)
           .write();
         response = "You have been registered and will receive reminders for the contests! ";
-        console.log("Registering user " + message.chat.id);
       }
       response += "Use /stop if you want to stop receiving reminders.";
       send(message, response);
     });
 
     bot.onText(/^\/stop(@\w+)*$/m, (message) => {
-      var users = db.low.get('users');
       var response = "";
-      if (users.find({ id : message.chat.id }).value() === undefined) {
-        response += "You are not currently receiving reminders. ";
+
+      var user = db.user.get(message.chat.id);
+
+      if (user.get('notify').value() === false) {
+        response = "Looks like you're already not registered for reminders. ";
       } else {
-        response += "You will no longer receive reminders for the contests :(. ";
-        users
-          .remove({ id : message.chat.id })
+        user
+          .set('notify', false)
           .write();
-        console.log("Deleting user " + message.chat.id);
+        response = "You have been unregistered and will not receive reminders for the contests :(. ";
       }
-      response += "Use /start if you want to receive reminders again.";
+      response += "Use /start if you want to receive reminders.";
       send(message, response);
     });
 
@@ -115,25 +117,21 @@ module.exports = {
       if (pars.length < 2) {
         response = "No judge specified.";
       } else {
+        var user = db.user.get(message.chat.id);
         var judge = pars[1];
-        var user = db.low
-          .get('users')
-          .find({ id: message.chat.id });
-        if (user.value() === undefined) {
-          response = "Use /start to receive reminders.";
+
+        var ignored = user
+          .has('ignore.' + judge)
+          .value();
+
+        if (ignored === true) {
+          user
+            .unset('ignore.' + judge)
+            .write();
+          response = "Ok! Now this judge no longer ignored for you!";
+          console.log("Enable " + judge + " on " + message.chat.id);
         } else {
-          var ignored = user
-            .has('ignore.' + judge)
-            .value();
-          if (ignored) {
-            user
-              .unset('ignore.' + judge)
-              .write();
-            response = "Ok! Now this judge no longer ignored for you!";
-            console.log("Enable " + judge + " on " + message.chat.id);
-          } else {
-            response = "You are not ignoring this judge.";
-          }
+          response = "You are not ignoring this judge.";
         }
       }
 
@@ -146,24 +144,21 @@ module.exports = {
       if (pars.length < 2) {
         response = "No judge specified.";
       } else {
+        var user = db.user.get(message.chat.id);
         var judge = pars[1];
-        var user = db.low
-          .get('users')
-          .find({ id: message.chat.id });
-        if (user.value() === undefined) {
-          response = "Use /start to receive reminders.";
+
+        var ignored = user
+          .has('ignore.' + judge)
+          .value();
+
+        if (ignored === false) {
+          user
+            .set('ignore.' + judge, true)
+            .write();
+          response = "Ok! Now this judge is now ignored for you!";
+          console.log("Disable " + judge + " on " + message.chat.id);
         } else {
-          var ignored = user
-            .has('ignore.' + judge)
-            .value();
-          if (ignored) {
-            response = "You are already ignoring this judge.";
-          } else {
-            user.set('ignore.' + judge, true)
-              .write();
-            response = "Ok! Now this judge is ignored for you!";
-            console.log("Disable " + judge + " on " + message.chat.id);
-          }
+          response = "You are already ignoring this judge.";
         }
       }
 
@@ -171,12 +166,30 @@ module.exports = {
     });
 
     bot.onText(/^\/judges(@\w+)*$/m, (message) => {
-      send(message, "You can /enable or /disable judges with the commands as you wish. Try typing /enable calendar. The currently supperted judges are: \n\n" +
-        "codeforces : codeforces.com" + "\n" + 
-        "topcoder : topcoder.com" + "\n" +
-        "codechef : codechef.com" + "\n" +
-        "csacademy : csacademy.com" + "\n" +
-        "calendar : manually inputed by the creators of the bot (codejam, yandex, local events, etc)" + "\n");
+      var user = db.user.get(message.chat.id);
+
+      var response = "You can /enable or /disable judges with the commands as you wish. Try typing /enable calendar.\n\n";
+      response += "Supported Judges: \n"
+
+      var vals = [
+        ['codeforces', ''],
+        ['topcoder', ''], 
+        ['codechef', ''],
+        ['csacademy', ''],
+        ['calendar', ' : manually inputed. (codejam, yandex, local events, etc)']
+      ];
+
+      for (var i = 0; i < vals.length; i++) {
+        var state = user
+          .has('ignore.' + vals[i][0])
+          .value();
+
+        if (state === true)
+          response += '[ignored] ';
+        response += vals[i][0] + vals[i][1] + '\n';
+      }
+
+      send(message, response);
     });
 
     bot.onText(/^\/help(@\w+)*$/, (message) => {
