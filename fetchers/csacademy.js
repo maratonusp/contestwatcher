@@ -26,7 +26,7 @@ module.exports = {
       res.on('data', (chunk) => rawData += chunk);
       res.on('end', () => {
         try {
-          let entryRegex = /\{\"longName\":(?:[^\}\\]|\\.)*\}/g;
+          let entryRegex = /\{[^\{]+?\"longName\".+?\}/g;
           let matched = [];
 
           while ((matched = entryRegex.exec(rawData)) !== null) {
@@ -45,8 +45,9 @@ module.exports = {
               duration: el.endTime - el.startTime
             };
 
-            if (entry.time >= Date.now())
+            if (entry.time + entry.duration*1000 >= Date.now()) {
               upcoming.push(entry);
+            }
           }
 
           upcoming.sort( (a,b) => { return a.time - b.time; });
