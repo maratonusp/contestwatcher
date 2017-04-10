@@ -25,7 +25,7 @@ module.exports = {
               duration: (el.end - el.start) / 1000
             };
 
-            if (entry.time >= Date.now())
+            if (entry.time + (entry.duration*1000) >= Date.now())
               upcoming.push(entry);
           }
         }

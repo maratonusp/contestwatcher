@@ -35,6 +35,42 @@ module.exports = {
       });
     };
 
+    bot.onText(/^\/running(@\w+)*$/, (message) => {
+      const user = db.user.get(message.chat.id);
+      const maxContests = 7;
+      var validContests = 0;
+      var result = "";
+
+      upcoming.forEach( (entry) => {
+        if (entry.time > Date.now())
+          return;
+        if (entry.time + (entry.duration*1000) < Date.now())
+          return;
+        if (user.has('ignore.' + entry.judge).value() === true)
+          return;
+
+        validContests++;
+
+        if (validContests <= maxContests) {
+          const d = entry.duration / 60;
+          const min = Math.ceil((entry.time.getTime() + entry.duration*1000 - Date.now()) / (1000 * 60));
+          result +=
+            '<a href="' + entry.url + '">' + entry.name + "</a> " +
+            "(" + Math.floor(d / 60) + "h" + (d % 60 == 0? "" : (d % 60 < 10? "0" : "") + (d % 60).toString())+ ")\n" +
+            "ends in <a href=\"" + time_link(entry.name, entry.time) + '">' +  num(min / (60 * 24), 'd ') + num((min / 60) % 24, 'h ') + (min % 60).toString() + "m</a>" +
+            "\n\n";
+        }
+      });
+
+      if (maxContests < validContests)
+        result += "And other " + (validContests - maxContests) + " running besides those...";
+
+      if (result == "")
+        result = "No running contests :(";
+
+      send(message, result);
+    });
+
     bot.onText(/^\/upcoming(@\w+)*$/, (message) => {
       const user = db.user.get(message.chat.id);
       const maxContests = 7;
@@ -201,6 +237,7 @@ module.exports = {
            "/start - Start receiving reminders before the contests. I'll send a reminder 1 day and another 1 hour before each contest.\n" +
            "/stop - Stop receiving reminders.\n" +
            "/upcoming - show the next scheduled contests.\n" +
+           "/running - show running contests.\n" +
            "/refresh - refresh the contest list. This is done automatically once per day.\n" +
            "/judges - list supported judges.\n" +
            "/enable judge - enable notifications for some judge.\n" +

@@ -29,7 +29,7 @@ module.exports = {
 
           upcoming.length = 0;
           parsedData.result.forEach( (el) => {
-            if (el.phase === "BEFORE") {
+            if (el.phase === "BEFORE" || el.phase === "CODING") {
               upcoming.push({
                 judge: 'codeforces',
                 name: el.name,

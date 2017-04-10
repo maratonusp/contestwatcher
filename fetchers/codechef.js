@@ -15,7 +15,7 @@ module.exports = {
             return;
           }
           const $ = window.$
-          const list = $("table.dataTable:eq(1)").children('tbody').children()
+          const list = $("table.dataTable:eq(0),table.dataTable:eq(1)").children('tbody').children()
           upcoming.length = 0;
           list.find('a').each((i, x) => {
             if (/Challenge|Cook|Lunchtime/.test(x.text) && /January|February|March|April|May|June|July|August|September|October|November|December/.test(x.text)) {
