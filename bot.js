@@ -195,7 +195,7 @@ module.exports = {
       send(message, response);
     });
 
-    bot.onText(/^\/help(@\w+)*$/, (message) => {
+    bot.onText(/^\/help(@\w+)*$/m, (message) => {
       send(message, "Hello, I am ContestWatcher Bot :D. I list programming contests from Codeforces, Topcoder, Codechef and CSAcademy.\n\n" +
            "You can control me by sending these commands: \n\n" +
            "/start - Start receiving reminders before the contests. I'll send a reminder 1 day and another 1 hour before each contest.\n" +
@@ -203,8 +203,8 @@ module.exports = {
            "/upcoming - show the next scheduled contests.\n" +
            "/refresh - refresh the contest list. This is done automatically once per day.\n" +
            "/judges - list supported judges.\n" +
-           "/enable <judge> - enable notifications for some judge.\n" +
-           "/disable <judge> - disable notifications for some judge.\n" +
+           "/enable judge - enable notifications for some judge.\n" +
+           "/disable judge - disable notifications for some judge.\n" +
            "/help - shows this help message.");
     });
 
