@@ -36,12 +36,15 @@ module.exports = {
     };
 
     bot.onText(/^\/upcoming(@\w+)*$/, (message) => {
+      const user = db.user.get(message.chat.id);
       const maxContests = 7;
       var validContests = 0;
       var result = "";
 
       upcoming.forEach( (entry) => {
         if (entry.time < Date.now())
+          return;
+        if (user.has('ignore.' + entry.judge).value() === true)
           return;
 
         validContests++;
