@@ -1,8 +1,7 @@
 const alerts = require('./alerts');
 const Semaphore = require('async-semaphore');
 
-//var fetchers = ['codeforces', 'codechef', 'topcoder', 'csacademy', 'calendar'];
-var fetchers = ['csacademy'];
+var fetchers = ['codeforces', 'codechef', 'topcoder', 'csacademy', 'calendar'];
 for (var i in fetchers) {
   fetchers[i] = {
     name: fetchers[i],
