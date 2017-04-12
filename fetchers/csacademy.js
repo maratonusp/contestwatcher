@@ -26,11 +26,12 @@ module.exports = {
       res.on('data', (chunk) => rawData += chunk);
       res.on('end', () => {
         try {
-          let entryRegex = /\{[^\{]+?\"longName\".+?\}/g;
+          let entryRegex = /\{\"longName\".+?\}/g;
           let matched = [];
 
           while ((matched = entryRegex.exec(rawData)) !== null) {
             var el = JSON.parse(matched[0]);
+            console.log(el.longName);
 
             if (/\s-\s(algorithms|interviews)$/.test(el.longName) || /^Virtual/.test(el.longName))
               continue;
@@ -45,9 +46,10 @@ module.exports = {
               duration: el.endTime - el.startTime
             };
 
-            if (entry.time + entry.duration*1000 >= Date.now()) {
+            var ending = entry.time;
+            ending.setSeconds(ending.getSeconds() + entry.duration);
+            if (ending >= Date.now())
               upcoming.push(entry);
-            }
           }
 
           upcoming.sort( (a,b) => { return a.time - b.time; });
