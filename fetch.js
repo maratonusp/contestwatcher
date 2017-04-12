@@ -14,7 +14,7 @@ var updateMerge = {};
 updateMerge.semaphore = new Semaphore(1, true);
 updateMerge.run = function (fetcher, current) {
   updateMerge.semaphore.acquire( () => {
-    console.log('merging ' + fetcher.name);
+    console.log('merging ' + fetcher.name + ' (found: ' + fetcher.upcoming.length + ')');
     var i = 0, j = 0;
     var old = Array.from(current);
     current.length = 0;
