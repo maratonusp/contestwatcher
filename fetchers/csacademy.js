@@ -31,7 +31,6 @@ module.exports = {
 
           while ((matched = entryRegex.exec(rawData)) !== null) {
             var el = JSON.parse(matched[0]);
-            console.log(el.longName);
 
             if (/\s-\s(algorithms|interviews)$/.test(el.longName) || /^Virtual/.test(el.longName))
               continue;
