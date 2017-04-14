@@ -45,7 +45,7 @@ module.exports = {
               duration: el.endTime - el.startTime
             };
 
-            var ending = entry.time;
+            var ending = new Date(entry.time);
             ending.setSeconds(ending.getSeconds() + entry.duration);
             if (ending >= Date.now())
               upcoming.push(entry);

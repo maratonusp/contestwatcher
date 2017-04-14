@@ -30,7 +30,7 @@ module.exports = {
           if (typeof url !== 'undefined' && /^http/.test(url))
             entry.url = url;
 
-          var ending = entry.time;
+          var ending = new Date(entry.time);
           ending.setSeconds(ending.getSeconds() + entry.duration);
           if (ending >= Date.now())
             upcoming.push(entry);
