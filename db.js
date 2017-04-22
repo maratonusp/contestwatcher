@@ -8,12 +8,14 @@ module.exports = {low: low};
 module.exports.user = (function () {
   var User = {};
 
+  low.defaults({users: []}).write();
+
   User.create = function (id) {
     console.log('Creating user ' + id);
-    var user = low
-      .get('users')
-      .push({ id : id, notify: false, ignore: {'calendar': true} })
+    low.get('users')
+      .push({ id: id, notify: false, ignore: {calendar: true} })
       .write();
+
     return low
       .get('users')
       .find({id : id});
