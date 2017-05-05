@@ -22,10 +22,17 @@ call_cf_api = function(name, args) {
 
     res.on('data', (chunk) => data += chunk);
     res.on('end', () => {
-      try { emitter.emit('end', JSON.parse(data)); }
-      catch(e) { emmiter.emit('error'); }
+      try {
+        const obj = JSON.parse(data);
+        if (obj.status == "FAILED") {
+          console.log('Call to ' + name + ' failed.\nComment: ' + obj.comment);
+          emitter.emit('error');
+          return;
+        }
+        emitter.emit('end', obj.result);
+      } catch(e) { emmiter.emit('error'); }
     }).on('error', (e) => {
-      console.log('Request Error Codeforces\n' + e.message);
+      console.log('Call to ' + name ' failed\n' + e.message);
       emitter.emit('error');
     });
   });
