@@ -32,7 +32,7 @@ module.exports = {
 
           var ending = new Date(entry.time);
           ending.setSeconds(ending.getSeconds() + entry.duration);
-          if (ending >= Date.now())
+          if (ending.getTime() >= Date.now())
             upcoming.push(entry);
         }
 

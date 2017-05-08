@@ -42,9 +42,9 @@ module.exports = {
       var result = "";
 
       upcoming.forEach( (entry) => {
-        if (entry.time > Date.now())
+        if (entry.time.getTime() > Date.now())
           return;
-        if (entry.time + (entry.duration*1000) < Date.now())
+        if (entry.time.getTime() + (entry.duration * 1000) < Date.now())
           return;
         if (user.has('ignore.' + entry.judge).value() === true)
           return;
@@ -78,7 +78,9 @@ module.exports = {
       var result = "";
 
       upcoming.forEach( (entry) => {
-        if (entry.time < Date.now())
+        if (entry.time.getTime() < Date.now())
+          return;
+        if (entry.time.getTime() > Date.now() + 14 * 24 * 60 * 60 * 1000) // at most 14 days
           return;
         if (user.has('ignore.' + entry.judge).value() === true)
           return;
@@ -97,7 +99,7 @@ module.exports = {
       });
 
       if (maxContests < validContests)
-        result += "And other " + (validContests - maxContests) + " scheduled after those...";
+        result += "And other " + (validContests - maxContests) + " scheduled in the next 2 weeks...";
 
       if (result == "")
         result = "No upcoming contests :(";
@@ -106,12 +108,12 @@ module.exports = {
     });
 
     bot.onText(/^\/refresh(@\w+)*$/, (message) => {
-      if (Date.now() - last_refresh < 1000 * 60 * 10) {
+      if (Date.now() - last_refresh.getTime() < 1000 * 60 * 10) {
         send(message, "Contest list was refreshed less than 10 minutes ago.");
       } else {
         send(message, "Refreshing contest list... Please wait a bit before using /upcoming.");
         judgefetcher.updateUpcoming(upcoming);
-        last_refresh = Date.now();
+        last_refresh = new Date();
       }
     });
 
