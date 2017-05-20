@@ -18,7 +18,7 @@ module.exports = {
           const list = $("table.dataTable:eq(0),table.dataTable:eq(1)").children('tbody').children()
           upcoming.length = 0;
           list.find('a').each((i, x) => {
-            if (/Challenge|Cook|Lunchtime|Snackdown/i.test(x.text) && /January|February|March|April|May|June|July|August|September|October|November|December/.test(x.text)) {
+            if ((/Challenge|Cook|Lunchtime/i.test(x.text) && /January|February|March|April|May|June|July|August|September|October|November|December/i.test(x.text)) || /Snackdown/i.test(x.text)) {
               const contest = list.eq(i).children(); // contest to be added
               const _start = moment.tz(contest.filter('.start_date').text(), 'DD MMM YYYY HH:mm:ss', 'Asia/Colombo');
               const _end = moment.tz(contest.filter('.end_date').text(), 'DD MMM YYYY HH:mm:ss', 'Asia/Colombo');
@@ -26,6 +26,7 @@ module.exports = {
                 console.log('Codechef invalid dates for ' + x.text);
               const start = _start.toDate();
               const end = _end.toDate();
+              if (end.getTime() < Date.now()) return;
               upcoming.push({
                 judge: 'codechef',
                 name: x.text,
