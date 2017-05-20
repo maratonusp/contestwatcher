@@ -9,11 +9,15 @@ const process = require('process');
 /* Calls method name with arguments args (from codeforces API), returns an emitter that calls 'end' returning the parsed JSON when the request ends. The emitter returns 'error' instead if something went wrong */
 call_cf_api = function(name, args) {
   const emitter = new EventEmitter();
+
+  emitter.on('error', (extra_info) => {
+    console.log('Call to ' + name + ' failed. ' + extra_info);
+  });
+
   http.get('http://codeforces.com/api/' + name + '?' + qs.stringify(args), (res) => {
     if (res.statusCode !== 200) {
-      console.log('Call to ' + name + ' failed [' + res.statusCode + ']');
       res.resume();
-      emitter.emit('error');
+      emitter.emit('error', 'Status Code: ' + res.statusCode);
       return;
     }
     res.setEncoding('utf8');
@@ -25,15 +29,13 @@ call_cf_api = function(name, args) {
       try {
         const obj = JSON.parse(data);
         if (obj.status == "FAILED") {
-          console.log('Call to ' + name + ' failed.\nComment: ' + obj.comment);
-          emitter.emit('error');
+          emitter.emit('error', 'Comment: ' + obj.comment);
           return;
         }
         emitter.emit('end', obj.result);
-      } catch(e) { emmiter.emit('error'); }
+      } catch(e) { emmiter.emit('error', ''); }
     }).on('error', (e) => {
-      console.log('Call to ' + name + ' failed\n' + e.message);
-      emitter.emit('error');
+      emitter.emit('error', e.message);
     });
   });
 

@@ -23,10 +23,16 @@ const time_link = (name, d) => {
 };
 
 let last_refresh = new Date(0);
+// ID of group that controls this bot
+const admin_id = -212740289;
 
 module.exports = {
   create_bot: (upcoming, judgefetcher) => {
     const bot = new Bot(process.env.TELEGRAM_TOKEN, {polling: true});
+
+    /* stores messages sent by the last broadcast
+     * keys = chatIds, values = messageIds */
+    var last_broadcast = {};
 
     const send = function(msg, txt) {
       bot.sendMessage(msg.chat.id, txt, {
@@ -34,6 +40,79 @@ module.exports = {
         disable_web_page_preview: true
       });
     };
+
+    bot.onText(/./, (message) => {
+      // mark last activity
+      db.user.get(message.chat.id).set('last_activity', Date.now()).write();
+    });
+
+    /* If this command comes from adms, replies to them with the same message.
+     * Used to test if /broadcast is correctly formatted */
+    bot.onText(/^\/mock_broadcast .*$/, (message) => {
+      if(message.chat.id != admin_id) return;
+      var text = message.text.slice(16);
+      bot.sendMessage(message.chat.id, text, {
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true
+      });
+    });
+
+    /* If this command comes from adms, sends the messsage after the command
+     * to all users */
+    bot.onText(/^\/broadcast .*$/, (message) => {
+      if(message.chat.id != admin_id) return;
+      var text = message.text.slice(11);
+      last_broadcast = {};
+      db.low
+        .get('users')
+        .map('id')
+        .value()
+        .forEach((id) => {
+          bot.sendMessage(id, text, {
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true
+          }).then((msg) => {
+            last_broadcast[id] = msg.message_id;
+          });
+        });
+    });
+
+    /* If this command comes from adms, edits the last sent
+     * broadcast message. Use with care. */
+    bot.onText(/^\/edit_broadcast .*$/, (message) => {
+      if(message.chat.id != admin_id) return;
+      var text = message.text.slice(16);
+      db.low
+        .get('users')
+        .map('id')
+        .value()
+        .forEach((id) => {
+          if(last_broadcast[id] === undefined) return;
+          bot.editMessageText(text, {
+            chat_id: id,
+            message_id: last_broadcast[id],
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true
+          });
+        });
+    });
+
+    /* If this command comes from adms, useful stats are returned */
+    bot.onText(/^\/status(@w+)*$/, (message) => {
+      if(message.chat.id != admin_id) return;
+      let count = 0;
+      const now = Date.now();
+      db.low
+        .get('users')
+        .map('last_activity')
+        .value()
+        .forEach((time) => {
+          if (time !== undefined && now - time < 7 * 24 * 60 * 60 * 1000)
+            count++;
+        });
+      var text = 'Active users in the last week: ' + count;
+      send(message, text);
+    });
 
     bot.onText(/^\/running(@\w+)*$/, (message) => {
       const user = db.user.get(message.chat.id);
