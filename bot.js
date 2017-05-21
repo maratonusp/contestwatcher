@@ -49,7 +49,6 @@ module.exports = {
     /* If this command comes from adms, replies to them with the same message.
      * Used to test if /broadcast is correctly formatted */
     bot.onText(/^\/mock_broadcast(@w+)? .*$/, (message) => {
-      console.log(message.chat.id + ' trying to mock');
       if(message.chat.id != admin_id) return;
       var text = message.text.slice(message.text.indexOf(' ') + 1);
       bot.sendMessage(message.chat.id, text, {
