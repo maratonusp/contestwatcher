@@ -296,6 +296,7 @@ module.exports = {
         ['topcoder', ''], 
         ['codechef', ''],
         ['csacademy', ''],
+        ['atcoder', ''],
         ['calendar', ' : manually inputed. (codejam, yandex, local events, etc)']
       ];
 
@@ -313,7 +314,7 @@ module.exports = {
     });
 
     bot.onText(/^\/help(@\w+)*$/m, (message) => {
-      send(message, "Hello, I am ContestWatcher Bot :D. I list programming contests from Codeforces, Topcoder, Codechef and CSAcademy.\n\n" +
+      send(message, "Hello, I am ContestWatcher Bot :D. I list programming contests from Codeforces, Topcoder, Codechef, CSAcademy and AtCoder.\n\n" +
            "You can control me by sending these commands: \n\n" +
            "/start - Start receiving reminders before the contests. I'll send a reminder 1 day and another 1 hour before each contest.\n" +
            "/stop - Stop receiving reminders.\n" +
