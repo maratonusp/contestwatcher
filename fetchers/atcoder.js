@@ -2,6 +2,20 @@ const jsdom = require('jsdom')
 const EventEmitter = require('events');
 const moment = require('moment-timezone');
 
+function isNumeric(string) {
+    return !isNaN(string);
+}
+
+/* Validate a duration array
+Expected format ['HH', 'mm'];
+*/
+function valid(duration){
+    return duration.length == 2
+    && isNumeric(duration[0])
+    && isNumeric(duration[1])
+    && parseInt(duration[1]) < 60;
+}
+
 module.exports = {
   updateUpcoming: (upcoming) => {
     const emitter = new EventEmitter();
@@ -14,25 +28,35 @@ module.exports = {
             return;
           }
           const $ = window.$;
-          var list = $('div.table-responsive').children('table:lt(2)').children('tbody').children('tr').slice(1);
-          for(var i = 0; i < list.length; i++) {
-            const info = list.eq(i).children('td');
-            const _name = info.eq(1).find('a').text();
-            const _start = moment.tz(info.first().find('a').text(), 'YYYY/MM/DD HH:mm', 'Asia/Tokyo');
-            const _dur = info.eq(2).text().match(/(\d+):(\d+)/);
-            if(!_start.isValid() || _dur.length < 3) {
-              console.log("AtCoder invalid dates for " + _name)
-              continue;
-            }
-            console.log(info.eq(1).find('a').attr('href'))
-            upcoming.push({
-              judge: 'atcoder',
-              name: _name,
-              url: info.eq(1).find('a').attr('href'),
-              time: _start.toDate(),
-              duration: _dur[1] * 3600 + _dur[2] * 60
+          /* There's no specific classes or ids for the tables.
+            We gather information of the first two tables tables (Active and Upcoming)
+            contests using :lt(2).
+          */
+          var contests = $('div.table-responsive').children('table:lt(2)').children('tbody').children('tr');
+          contests.each(function (){
+              const row = $(this).children('td');
+              const name = row.eq(1).find('a').text();
+
+              /* There's always this practice contest */
+              if(name == 'practice contest') return;
+
+              const start = moment.tz(row.eq(0).find('a').text(), 'YYYY/MM/DD HH:mm', 'Asia/Tokyo');
+              const duration = row.eq(2).text().split(':'); /* HH:mm */
+              const url = row.eq(1).find('a').attr('href');
+              if(!start.isValid() || !valid(duration)) {
+                console.log("AtCoder invalid dates for " + name);
+                console.log("\t Start: " + start);
+                console.log("\t Duration: " + duration);
+                return;
+              }
+              upcoming.push({
+                judge: 'atcoder',
+                name: name,
+                url: url,
+                time: start.toDate(),
+                duration: duration[0] * 3600 + duration[1] * 60
+              });
             });
-          }
           emitter.emit('end');
         });
 
