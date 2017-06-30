@@ -48,7 +48,7 @@ module.exports = {
 
     /* If this command comes from adms, replies to them with the same message.
      * Used to test if /broadcast is correctly formatted */
-    bot.onText(/^\/mock_broadcast(@w+)? .*$/, (message) => {
+    bot.onText(/^\/mock_broadcast(@\w+)* .*$/, (message) => {
       if(message.chat.id != admin_id) return;
       var text = message.text.slice(message.text.indexOf(' ') + 1);
       bot.sendMessage(message.chat.id, text, {
@@ -59,7 +59,7 @@ module.exports = {
 
     /* If this command comes from adms, sends the messsage after the command
      * to all users */
-    bot.onText(/^\/broadcast(@w+)? .*$/, (message) => {
+    bot.onText(/^\/broadcast(@\w+)* .*$/, (message) => {
       if(message.chat.id != admin_id) return;
       var text = message.text.slice(message.text.indexOf(' ') + 1);
       last_broadcast = {};
@@ -79,7 +79,7 @@ module.exports = {
 
     /* If this command comes from adms, edits the last sent
      * broadcast message. Use with care. */
-    bot.onText(/^\/edit_broadcast(@w+)? .*$/, (message) => {
+    bot.onText(/^\/edit_broadcast(@\w+)* .*$/, (message) => {
       if(message.chat.id != admin_id) return;
       var text = message.text.slice(message.text.indexOf(' ') + 1);
       db.low
@@ -98,7 +98,7 @@ module.exports = {
     });
 
     /* If this command comes from adms, useful stats are returned */
-    bot.onText(/^\/status(@w+)*$/, (message) => {
+    bot.onText(/^\/status(@\w+)*$/, (message) => {
       if(message.chat.id != admin_id) return;
       let count = 0;
       const now = Date.now();

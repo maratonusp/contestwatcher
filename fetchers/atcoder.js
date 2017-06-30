@@ -27,6 +27,7 @@ module.exports = {
             console.log("Failed on AtCoder.");
             return;
           }
+          upcoming.length = 0;
           const $ = window.$;
           /* There's no specific classes or ids for the tables.
             We gather information of the first two tables tables (Active and Upcoming)
