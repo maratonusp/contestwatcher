@@ -17,13 +17,13 @@ warn = function (ev, left) {
   db.low
     .get('users')
     .reject(function(user) {
-      return !user.notify || user.ignore[ev.judge]
+      return user.invalid || !user.notify || user.ignore[ev.judge]
     })
     .map('id')
     .value()
     .forEach(function (id) {
       var message = '[' + ev.name + '](' + ev.url + ') will start in ' + left + '.';
-      bot.bot.sendMessage(id, message, {
+      Bot.sendMessage(id, message, {
         parse_mode: 'Markdown',
         disable_web_page_preview: true
       });

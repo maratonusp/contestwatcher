@@ -48,11 +48,11 @@ const contest_end_handlers = [];
 simple_msg_all = function(msg) {
   db.low
     .get('users')
-    .reject((user) => { return !user.notify || user.ignore["codeforces"]; })
+    .reject((user) => { return user.invalid || !user.notify || user.ignore["codeforces"]; })
     .map('id')
     .value()
     .forEach((id) => {
-      bot.bot.sendMessage(id, msg, {
+      Bot.sendMessage(id, msg, {
         parse_mode: 'Markdown',
         disable_web_page_preview: true
       });
