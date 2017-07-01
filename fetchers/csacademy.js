@@ -5,7 +5,15 @@ module.exports = {
   updateUpcoming: (upcoming) => {
     const emitter = new EventEmitter();
 
-    https.get('https://csacademy.com/contests/', (res) => {
+    const options = {
+        hostname: 'csacademy.com',
+        path: '/contests/',
+        headers: {
+            'x-requested-with': 'XMLHttpRequest'
+        }
+    };
+
+    https.get(options, (res) => {
       let error;
 
       if (res.statusCode !== 200) {
@@ -20,29 +28,22 @@ module.exports = {
 
       res.setEncoding('utf8');
 
-      let rawData = '';
+      let rawStateJSON = '';
 
       upcoming.length = 0
-      res.on('data', (chunk) => rawData += chunk);
+      res.on('data', (chunk) => rawStateJSON += chunk);
       res.on('end', () => {
         try {
-          let entryRegex = /\{\"longName\".+?\}/g;
-          let matched = [];
-
-          while ((matched = entryRegex.exec(rawData)) !== null) {
-            var el = JSON.parse(matched[0]);
-
-            if (/\s-\s(algorithms|interviews)$/.test(el.longName) || /^Virtual/.test(el.longName))
-              continue;
-            if (el.startTime == null)
-              continue;
+          let stateJSON = JSON.parse(rawStateJSON);
+          for (contest of stateJSON.state.contest) {
+            if(!contest.rated) continue;
 
             var entry = {
               judge: 'csacademy',
-              name: el.longName,
-              url: 'https://csacademy.com/contest/' + el.name,
-              time: new Date(el.startTime * 1000),
-              duration: el.endTime - el.startTime
+              name: contest.longName,
+              url: 'https://csacademy.com/contest/' + contest.name,
+              time: new Date(contest.startTime * 1000),
+              duration: contest.endTime - contest.startTime
             };
 
             var ending = new Date(entry.time);
