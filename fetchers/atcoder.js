@@ -30,10 +30,9 @@ module.exports = {
           upcoming.length = 0;
           const $ = window.$;
           /* There's no specific classes or ids for the tables.
-            We gather information of the first two tables tables (Active and Upcoming)
-            contests using :lt(2).
+            We gather information of the tables that follow the "Active Contests" and "Upcoming Contests" headers.
           */
-          var contests = $('div.table-responsive').children('table:lt(2)').children('tbody').children('tr');
+          var contests = $(':header:contains("Active Contests"), :header:contains("Upcoming Contests") + div').children('table').children('tbody').children('tr');
           contests.each(function (){
               const row = $(this).children('td');
               const name = row.eq(1).find('a').text();
