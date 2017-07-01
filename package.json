@@ -15,7 +15,8 @@
     "codeforces",
     "topcoder",
     "codechef",
-    "csacademy"
+    "csacademy",
+    "atcoder"
   ],
   "author": "victorsenam <victorsenam@gmail.com>",
   "license": "ISC",
@@ -27,6 +28,7 @@
     "lowdb": "^0.16.1",
     "moment-timezone": "^0.5.11",
     "node-schedule": "^1.2.0",
-    "node-telegram-bot-api": "^0.27.0"
+    "node-telegram-bot-api": "^0.27.0",
+    "botanio": "^0.0.6"
   }
 }

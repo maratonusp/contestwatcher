@@ -5,18 +5,18 @@ const process = require('process');
 const url = require('url');
 const fs = require('fs');
 
-const judge = require('./fetch');
-const bot = require('./bot');
-
-const hostname = 'localhost';
-const port = (process.env.PORT || 3000);
-
 const old_log = console.log
 console.log = (str) => {
   str = dateFormat(new Date(), "UTC:[dd/mm/yy HH:MM:ss] ") + str
   fs.appendFile('run.log', str.toString() + '\n', function (err) {});
   old_log(str);
 }
+
+const judge = require('./fetch');
+const bot = require('./bot');
+
+const hostname = 'localhost';
+const port = (process.env.PORT || 3000);
 
 // fetcher
 var upcoming = [];

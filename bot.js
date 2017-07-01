@@ -2,6 +2,10 @@ const Bot = require('node-telegram-bot-api');
 const dateformat = require('dateformat');
 const process = require('process');
 
+const botan = require('botanio')(process.env.BOTANIO_TOKEN);
+const using_botanio = (process.env.BOTANIO_TOKEN !== undefined);
+console.log("Using botan.io: " + using_botanio);
+
 const db = require('./db');
 
 const num = (x, pos) => {
@@ -45,6 +49,17 @@ module.exports = {
       // mark last activity
       db.user.get(message.chat.id).set('last_activity', Date.now()).write();
     });
+
+    // botanio stuff
+    if(using_botanio) {
+      bot.onText(/^\/\w+/, (message) => {
+        const command = message.text.match(/^\/(\w+)/)[1];
+        botan.track(message, command, (err, res, body) => {
+          if(err)
+            console.log("Botan.io error: " + err);
+        });
+      });
+    }
 
     /* If this command comes from adms, replies to them with the same message.
      * Used to test if /broadcast is correctly formatted */
