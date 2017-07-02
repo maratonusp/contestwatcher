@@ -23,7 +23,7 @@ warn = function (ev, left) {
     .value()
     .forEach(function (id) {
       var message = '[' + ev.name + '](' + ev.url + ') will start in ' + left + '.';
-      Bot.sendMessage(id, message, {
+      bot.sendMessage(id, message, {
         parse_mode: 'Markdown',
         disable_web_page_preview: true
       });

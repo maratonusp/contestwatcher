@@ -52,7 +52,7 @@ simple_msg_all = function(msg) {
     .map('id')
     .value()
     .forEach((id) => {
-      Bot.sendMessage(id, msg, {
+      bot.sendMessage(id, msg, {
         parse_mode: 'Markdown',
         disable_web_page_preview: true
       });
