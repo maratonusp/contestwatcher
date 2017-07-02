@@ -17,7 +17,7 @@ warn = function (ev, left) {
   db.low
     .get('users')
     .reject(function(user) {
-      return user.invalid || !user.notify || user.ignore[ev.judge]
+      return !user.notify || user.ignore[ev.judge]
     })
     .map('id')
     .value()

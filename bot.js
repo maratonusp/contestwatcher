@@ -35,11 +35,11 @@ var Bot = module.exports = {}
 
 /* Marks invalid users that have blocked the bot */
 function mark_invalid() {
-  var text = "Marking " + invalid_users.size + " users invalid.";
+  var text = "Deleting " + invalid_users.size + " invalid users.";
   db.low
     .get('users')
-    .filter((user) => { return invalid_users.has(user.id); })
-    .set('invalid', true).write();
+    .remove((user) => { return invalid_users.has(user.id); })
+    .write();
   invalid_users.clear();
   return text;
 }
@@ -93,7 +93,6 @@ Bot.create_bot = (upcoming, judgefetcher) => {
     last_broadcast = {};
     db.low
       .get('users')
-      .reject((user) => { return user.invalid; })
       .map('id')
       .value()
       .forEach((id) => {
@@ -143,7 +142,6 @@ Bot.create_bot = (upcoming, judgefetcher) => {
       .get('users')
       .value()
       .forEach((user) => {
-        if (user.invalid) return;
         valid++;
         if (user.notify) {
           notified++;
@@ -389,7 +387,9 @@ Bot.sendMessage = (chatId, text, options) => {
   var promise = Bot.bot.sendMessage(chatId, text, options);
   promise.catch((error) => {
     console.log("Error while sending message: " + error.code + "\n" + JSON.stringify(error.response.body));
-    if (error.response.body.error_code === 400)
+    const err = error.response.body.error_code;
+    // if the bot has been "banned" by this chat
+    if (err === 400 || err === 403)
       invalid_users.add(chatId);
   });
   return promise;

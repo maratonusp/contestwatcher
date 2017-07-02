@@ -48,7 +48,7 @@ const contest_end_handlers = [];
 simple_msg_all = function(msg) {
   db.low
     .get('users')
-    .reject((user) => { return user.invalid || !user.notify || user.ignore["codeforces"]; })
+    .reject((user) => { return !user.notify || user.ignore["codeforces"]; })
     .map('id')
     .value()
     .forEach((id) => {
