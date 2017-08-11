@@ -35,7 +35,7 @@ module.exports = {
       res.on('end', () => {
         try {
           let stateJSON = JSON.parse(rawStateJSON);
-          for (contest of stateJSON.state.contest) {
+          for (contest of stateJSON.state.Contest) {
             if(!contest.rated) continue;
 
             var entry = {
