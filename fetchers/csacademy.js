@@ -40,7 +40,7 @@ module.exports = {
 
             var entry = {
               judge: 'csacademy',
-              name: contest.longName,
+              name: 'CSAcademy ' + contest.longName,
               url: 'https://csacademy.com/contest/' + contest.name,
               time: new Date(contest.startTime * 1000),
               duration: contest.endTime - contest.startTime
