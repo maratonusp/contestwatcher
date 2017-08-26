@@ -375,9 +375,9 @@ Bot.create_bot = (upcoming, judgefetcher) => {
       "/help - shows this help message.");
   });
 
-  bot.onText(/^\/hue(@\w+)*$/, (message) => {
-    bot.sendAudio(message.chat.id, 'audio/gas.ogg');
-  });
+  // bot.onText(/^\/hue(@\w+)*$/, (message) => {
+  //   bot.sendAudio(message.chat.id, 'audio/gas.ogg');
+  // });
 
   Bot.bot = bot;
 }
