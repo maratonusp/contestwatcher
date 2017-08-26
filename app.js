@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const dateFormat = require('dateformat')
 const http = require('http');
 const schedule = require('node-schedule');
