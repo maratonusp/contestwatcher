@@ -43,5 +43,10 @@ module.exports = {
       fetcher.object.updateUpcoming(fetcher.upcoming)
         .on('end', () => { updateMerge.run(fetcher, upcoming); });
     }
+  },
+  get_fetcher: (name) => {
+    for(var i in fetchers)
+      if(fetchers[i].name === name)
+        return fetchers[i];
   }
 };

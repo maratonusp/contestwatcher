@@ -164,5 +164,6 @@ module.exports = {
     });
 
     return emitter;
-  }
+  },
+  announceContest: (ev, left) => { simple_msg_all('[' + ev.name + '](' + ev.url + ') will start in ' + left + '.'); }
 };

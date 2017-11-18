@@ -1,6 +1,7 @@
 const schedule = require('node-schedule');
 const bot = require('./bot');
 const db = require('./db');
+const fetch = require('./fetch')
 
 const event_handlers = []
 
@@ -12,22 +13,24 @@ const day = 24 * hour;
 const alerts = module.exports = {}
 
 warn = function (ev, left) {
-  var filter_par = { notify: false, ignore: {} }
-  filter_par.ignore[ev.judge] = true;
-  db.low
-    .get('users')
-    .reject(function(user) {
-      return !user.notify || user.ignore[ev.judge]
-    })
-    .map('id')
-    .value()
-    .forEach(function (id) {
-      var message = '[' + ev.name + '](' + ev.url + ') will start in ' + left + '.';
-      bot.sendMessage(id, message, {
-        parse_mode: 'Markdown',
-        disable_web_page_preview: true
-      });
-  });
+  var message = '[' + ev.name + '](' + ev.url + ') will start in ' + left + '.';
+  var fetcher = fetch.get_fetcher(ev.judge).object
+  if(fetcher.announceContest !== undefined)
+    fetcher.announceContest(ev, left);
+  else // default behavior
+    db.low
+      .get('users')
+      .reject(function(user) {
+        return !user.notify || user.ignore[ev.judge]
+      })
+      .map('id')
+      .value()
+      .forEach(function (id) {
+        bot.sendMessage(id, message, {
+          parse_mode: 'Markdown',
+          disable_web_page_preview: true
+        });
+    });
 };
 
 alerts.reset_alerts = function(upcoming) {
