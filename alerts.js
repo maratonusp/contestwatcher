@@ -1,7 +1,6 @@
 const schedule = require('node-schedule');
 const bot = require('./bot');
 const db = require('./db');
-const fetch = require('./fetch')
 
 const event_handlers = []
 
@@ -12,9 +11,8 @@ const day = 24 * hour;
 
 const alerts = module.exports = {}
 
-warn = function (ev, left) {
+warn = function (ev, left, fetcher) {
   var message = '[' + ev.name + '](' + ev.url + ') will start in ' + left + '.';
-  var fetcher = fetch.get_fetcher(ev.judge).object
   if(fetcher.announceContest !== undefined)
     fetcher.announceContest(ev, left);
   else // default behavior
@@ -33,11 +31,12 @@ warn = function (ev, left) {
     });
 };
 
-alerts.reset_alerts = function(upcoming) {
+alerts.reset_alerts = function(upcoming, get_fetcher) {
   event_handlers.forEach((h) => { if (h) h.cancel(); });
   event_handlers.length = 0;
   upcoming.forEach((ev) => {
-    event_handlers.push(schedule.scheduleJob(new Date(ev.time.getTime() - day), () => { warn(ev, '1 day'); }));
-    event_handlers.push(schedule.scheduleJob(new Date(ev.time.getTime() - hour), () => { warn(ev, '1 hour'); }));
+    const fetcher = get_fetcher(ev.judge).object;
+    event_handlers.push(schedule.scheduleJob(new Date(ev.time.getTime() - day), () => { warn(ev, '1 day', fetcher); }));
+    event_handlers.push(schedule.scheduleJob(new Date(ev.time.getTime() - hour), () => { warn(ev, '1 hour', fetcher); }));
   });
 };

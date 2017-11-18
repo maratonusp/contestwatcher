@@ -10,6 +10,12 @@ for (var i in fetchers) {
   };
 }
 
+get_fetcher = function(name) {
+  for(var i in fetchers)
+    if(fetchers[i].name === name)
+      return fetchers[i];
+}
+
 var updateMerge = {};
 updateMerge.semaphore = new Semaphore(1, true);
 updateMerge.run = function (fetcher, current) {
@@ -31,7 +37,7 @@ updateMerge.run = function (fetcher, current) {
       }
     }
 
-    alerts.reset_alerts(current);
+    alerts.reset_alerts(current, get_fetcher);
     updateMerge.semaphore.release();
   });
 };
@@ -43,10 +49,5 @@ module.exports = {
       fetcher.object.updateUpcoming(fetcher.upcoming)
         .on('end', () => { updateMerge.run(fetcher, upcoming); });
     }
-  },
-  get_fetcher: (name) => {
-    for(var i in fetchers)
-      if(fetchers[i].name === name)
-        return fetchers[i];
   }
 };
