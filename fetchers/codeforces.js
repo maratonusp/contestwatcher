@@ -37,15 +37,41 @@ call_cf_api = function(name, args) {
     }).on('error', (e) => {
       emitter.emit('error', e.message);
     });
+  }).on('error', (e) => {
+    emitter.emit('error', e.message);
   });
 
   return emitter;
 };
 
+/* Calls cf api function 'name' every 30 seconds until condition is satisfied, and then calls callback. Tries at most for a day, if it is not satisfied, then it gives up. */
+wait_for_condition_on_api_call = function(name, args, condition, callback) {
+  const emitter = new EventEmitter();
+  var count_calls = 0;
+  var handle = schedule.scheduleJob('/30 * * * * *', () => {
+    call_cf_api(name, args)
+      .on('end', (obj) => {
+        if (condition(obj)) {
+          handle.cancel();
+          callback(obj);
+        } else if (count_calls++ > 2 * 60 * 24) // 1 day
+          handle.cancel();
+      }).on('error', () => {
+        if (count_all++ > 2 * 60 * 24) // 1 day
+          handle.cancel()
+      });
+  });
+}
+
 const contest_end_handlers = [];
 
-/* Sends msg to all users that receive codeforces notifications */
-simple_msg_all = function(msg) {
+const cf_msg_buffer = [];
+
+flush_cf_msgs = function() {
+  if(cf_msg_buffer.length === 0)
+    return;
+  var msg = cf_msg_buffer.join('\n');
+  cf_msg_buffer.length = 0;
   db.low
     .get('users')
     .reject((user) => { return !user.notify || user.ignore["codeforces"]; })
@@ -59,6 +85,13 @@ simple_msg_all = function(msg) {
     });
 }
 
+/* Schedules msg to all users that receive codeforces notifications. (tries to group messages together) */
+simple_msg_all = function(msg) {
+  cf_msg_buffer.push(msg)
+  var in15s = new Date(Date.now() + 15 * 1000);
+  schedule.scheduleJob(in15s, flush_cf_msgs);
+}
+
 /* Called when ratings are changed */
 process_final = function(ev, contest_id) {
   simple_msg_all('Ratings for [' + ev.name + '](' + ev.url + ') are out!');
@@ -67,67 +100,33 @@ process_final = function(ev, contest_id) {
 /* Called when system testing ends, checks for rating changes */
 process_ratings = function(ev, contest_id) {
   simple_msg_all('System testing has finished for [' + ev.name + '](' + ev.url + '). Waiting for rating changes.');
-  var count_all = 0;
-  var ratings_wait;
-  ratings_wait = schedule.scheduleJob('/20 * * * * *', (handle) => {
-    call_cf_api('contest.ratingChanges', {contestId: contest_id})
-      .on('end', (obj) => {
-        if (obj.length > 0) {
-          ratings_wait.cancel();
-          process_final(ev, contest_id);
-        }
-        if (count_all++ > 1440 * 3) // 1 day
-          ratings_wait.cancel();
-      }).on('error', () => {
-        if (count_all++ > 1440 * 3) // 1 day
-          ratings_wait.cancel()
-      });
-  });
+  wait_for_condition_on_api_call('contest.ratingChanges', {contestId: contest_id},
+    /* condition */ (obj) => obj.length > 0,
+    /* callback */  () => process_final(ev, contest_id));
 }
 
 /* Called when system testing starts, checks for end of system testing */
 process_systest = function(ev, contest_id) {
   simple_msg_all('System testing has started for [' + ev.name + '](' + ev.url + ').');
-  var count_all = 0;
-  var systest_wait;
-  systest_wait = schedule.scheduleJob('/20 * * * * *', (handle) => {
-    call_cf_api('contest.standings', {contestId: contest_id, from: 1, count: 1})
-      .on('end', (obj) => {
-        const c = obj.contest;
-        if (c.phase == 'FINISHED') {
-          systest_wait.cancel();
-          process_ratings(ev, contest_id);
-        }
-        if (count_all++ > 1440 * 3) // 1 day
-          systest_wait.cancel();
-      }).on('error', () => {
-        if (count_all++ > 1440 * 3) // 1 day
-          systest_wait.cancel()
-      });
-  });
+  wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
+    /* condition */ (obj) => obj.contest.phase == 'FINISHED',
+    /* callback */  () => process_ratings(ev, contest_id));
 }
 
 /* Called when contest ends, checks for start of system testing */
 process_contest_end = function(ev, contest_id) {
   simple_msg_all('[' + ev.name + '](' + ev.url + ') has just ended. Waiting for system testing.');
-  var count_all = 0;
-  var systest_wait;
-  systest_wait = schedule.scheduleJob('/20 * * * * *', (handle) => {
-    call_cf_api('contest.standings', {contestId: contest_id, from: 1, count: 1})
-      .on('end', (obj) => {
-        const c = obj.contest;
-        if (c.phase == 'SYSTEM_TEST' || c.phase == 'FINISHED') {
-          systest_wait.cancel();
-          process_systest(ev, contest_id);
-        }
-        if (count_all++ > 1440 * 3) // 1 day
-          systest_wait.cancel();
-      }).on('error', () => {
-        if (count_all++ > 1440 * 3) // 1 day
-          systest_wait.cancel()
-      });
-  });
-};
+  wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
+    /* condition */ (obj) => obj.contest.phase == 'SYSTEM_TEST' || obj.contest.phase == 'FINISHED',
+    /* callback */  () => process_systest(ev, contest_id));
+}
+
+/* Checks if contest really ended. (was not extended) */
+prelim_contest_end = function(ev, contest_id) {
+  wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
+    /* condition */ (obj) => obj.contest.phase !== 'BEFORE' && obj.contest.phase !== 'CODING',
+    /* callback */  () => process_contest_end(ev, contest_id));
+}
 
 
 module.exports = {
@@ -151,8 +150,8 @@ module.exports = {
             };
             upcoming.push(ev);
             if (el.type === "CF")
-              contest_end_handlers.push(schedule.scheduleJob(new Date((el.startTimeSeconds + el.durationSeconds) * 1000),
-                    () => { process_contest_end(ev, el.id); }));
+              contest_end_handlers.push(schedule.scheduleJob(new Date((el.startTimeSeconds + el.durationSeconds - 15) * 1000),
+                    () => { prelim_contest_end(ev, el.id); }));
           }
         });
 
