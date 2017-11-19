@@ -13,7 +13,13 @@ module.exports.user = (function () {
   User.create = function (id) {
     console.log('Creating user ' + id);
     low.get('users')
-      .push({ id: id, notify: false, ignore: {calendar: true}, last_activity: Date.now() })
+      .push({
+        id: id,
+        notify: false,
+        ignore: {calendar: true},
+        last_activity: Date.now(),
+        cf_handles: [],
+      })
       .write();
 
     return low

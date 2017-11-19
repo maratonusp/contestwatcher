@@ -7,39 +7,53 @@ const qs = require('querystring');
 const process = require('process');
 
 /* Calls method name with arguments args (from codeforces API), returns an emitter that calls 'end' returning the parsed JSON when the request ends. The emitter returns 'error' instead if something went wrong */
-call_cf_api = function(name, args) {
+call_cf_api = function(name, args, retry_times) {
   const emitter = new EventEmitter();
 
   emitter.on('error', (extra_info) => {
     console.log('Call to ' + name + ' failed. ' + extra_info);
   });
 
-  http.get('http://codeforces.com/api/' + name + '?' + qs.stringify(args), (res) => {
-    if (res.statusCode !== 200) {
-      res.resume();
-      emitter.emit('error', 'Status Code: ' + res.statusCode);
-      return;
-    }
-    res.setEncoding('utf8');
+  let try_;
+  try_= function(times) {
+    console.log('CF request: ' + 'http://codeforces.com/api/' + name + '?' + qs.stringify(args));
+    http.get('http://codeforces.com/api/' + name + '?' + qs.stringify(args), (res) => {
+      if (res.statusCode !== 200) {
+        res.resume();
+        if(times > 0) try_(times - 1);
+        else emitter.emit('error', 'Status Code: ' + res.statusCode);
+        return;
+      }
+      res.setEncoding('utf8');
 
-    let data = '';
+      let data = '';
 
-    res.on('data', (chunk) => data += chunk);
-    res.on('end', () => {
-      try {
-        const obj = JSON.parse(data);
-        if (obj.status == "FAILED") {
-          emitter.emit('error', 'Comment: ' + obj.comment);
+      res.on('data', (chunk) => data += chunk);
+      res.on('end', () => {
+        let obj;
+        try {
+          obj = JSON.parse(data);
+          if (obj.status == "FAILED") {
+            if(times > 0) try_(times - 1);
+            else emitter.emit('error', 'Comment: ' + obj.comment);
+            return;
+          }
+        } catch(e) {
+          if(times > 0) try_(times - 1);
+          else emitter.emit('error', '');
           return;
         }
         emitter.emit('end', obj.result);
-      } catch(e) { emmiter.emit('error', ''); }
+      }).on('error', (e) => {
+        if(times > 0) try_(times - 1);
+        else emitter.emit('error', e.message);
+      });
     }).on('error', (e) => {
-      emitter.emit('error', e.message);
+      if(times > 0) try_(times - 1);
+      else emitter.emit('error', e.message);
     });
-  }).on('error', (e) => {
-    emitter.emit('error', e.message);
-  });
+  }
+  try_(retry_times);
 
   return emitter;
 };
@@ -47,9 +61,9 @@ call_cf_api = function(name, args) {
 /* Calls cf api function 'name' every 30 seconds until condition is satisfied, and then calls callback. Tries at most for a day, if it is not satisfied, then it gives up. */
 wait_for_condition_on_api_call = function(name, args, condition, callback) {
   const emitter = new EventEmitter();
-  var count_calls = 0;
-  var handle = schedule.scheduleJob('/30 * * * * *', () => {
-    call_cf_api(name, args)
+  let count_calls = 0;
+  let handle = schedule.scheduleJob('/30 * * * * *', () => {
+    call_cf_api(name, args, 0)
       .on('end', (obj) => {
         if (condition(obj)) {
           handle.cancel();
@@ -65,16 +79,14 @@ wait_for_condition_on_api_call = function(name, args, condition, callback) {
 
 const contest_end_handlers = [];
 
-const cf_msg_buffer = [];
-
-flush_cf_msgs = function() {
-  if(cf_msg_buffer.length === 0)
+flush_cf_msgs = function(buffer, rejectExtra) {
+  if(buffer.length === 0)
     return;
-  var msg = cf_msg_buffer.join('\n');
-  cf_msg_buffer.length = 0;
+  let msg = buffer.join('\n');
+  buffer.length = 0;
   db.low
     .get('users')
-    .reject((user) => { return !user.notify || user.ignore["codeforces"]; })
+    .reject((user) => { return !user.notify || user.ignore["codeforces"] || (rejectExtra && rejectExtra(user)); })
     .map('id')
     .value()
     .forEach((id) => {
@@ -86,28 +98,60 @@ flush_cf_msgs = function() {
 }
 
 /* Schedules msg to all users that receive codeforces notifications. (tries to group messages together) */
+const cf_simple_buffer = [];
 simple_msg_all = function(msg) {
-  cf_msg_buffer.push(msg)
-  var in15s = new Date(Date.now() + 15 * 1000);
-  schedule.scheduleJob(in15s, flush_cf_msgs);
+  cf_simple_buffer.push(msg);
+  let in15s = new Date(Date.now() + 15 * 1000);
+  schedule.scheduleJob(in15s, () => flush_cf_msgs(cf_simple_buffer, null));
+}
+
+const in_contest_ids = new Set();
+var in_contest_handles = [];
+
+/* Schedules msg to all users in current contest. (tries to group messages together) */
+const cf_contest_buffer = [];
+contest_msg_all = function(msg) {
+  cf_contest_buffer.push(msg);
+  let in15s = new Date(Date.now() + 15 * 1000);
+  schedule.scheduleJob(in15s, () => flush_cf_msgs(cf_contest_buffer, (user) => !in_contest_ids.has(user.id)));
 }
 
 /* Called when ratings are changed */
-process_final = function(ev, contest_id) {
-  simple_msg_all('Ratings for [' + ev.name + '](' + ev.url + ') are out!');
+process_final = function(ratings, ev, contest_id) {
+  const mp = new Map();
+  ratings.forEach((r) => mp.set(r.handle, r));
+  db.low
+    .get('users')
+    .reject((user) => { return !user.notify || user.ignore["codeforces"] || !in_contest_ids.has(user.id); })
+    .value()
+    .forEach((user) => {
+      let msg = 'Ratings for [' + ev.name + '](' + ev.url + ') are out!';
+      let rs = []; // ratings for handles from user
+      user.cf_handles.forEach((h) => {
+        if(mp.has(h))
+          rs.push(mp.get(h));
+      });
+      rs.sort((a, b) => a.rank - b.rank);
+      rs.forEach((r) => {
+        let prefix = "";
+        if(r.newRating >= r.oldRating) prefix = "+";
+        msg += '\n' + r.handle + ': ' + r.oldRating + ' -> ' + r.newRating + ' (' + prefix + (r.newRating - r.oldRating) + ')'
+      });
+      bot.sendMessage(user.id, msg, { parse_mode: 'Markdown', disable_web_page_preview: true });
+    });
 }
 
 /* Called when system testing ends, checks for rating changes */
 process_ratings = function(ev, contest_id) {
-  simple_msg_all('System testing has finished for [' + ev.name + '](' + ev.url + '). Waiting for rating changes.');
+  contest_msg_all('System testing has finished for [' + ev.name + '](' + ev.url + '). Waiting for rating changes.');
   wait_for_condition_on_api_call('contest.ratingChanges', {contestId: contest_id},
     /* condition */ (obj) => obj.length > 0,
-    /* callback */  () => process_final(ev, contest_id));
+    /* callback */  (obj) => process_final(obj, ev, contest_id));
 }
 
 /* Called when system testing starts, checks for end of system testing */
 process_systest = function(ev, contest_id) {
-  simple_msg_all('System testing has started for [' + ev.name + '](' + ev.url + ').');
+  contest_msg_all('System testing has started for [' + ev.name + '](' + ev.url + ').');
   wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
     /* condition */ (obj) => obj.contest.phase == 'FINISHED',
     /* callback */  () => process_ratings(ev, contest_id));
@@ -115,19 +159,46 @@ process_systest = function(ev, contest_id) {
 
 /* Called when contest ends, checks for start of system testing */
 process_contest_end = function(ev, contest_id) {
-  simple_msg_all('[' + ev.name + '](' + ev.url + ') has just ended. Waiting for system testing.');
+  contest_msg_all('[' + ev.name + '](' + ev.url + ') has just ended. Waiting for system testing.');
   wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
     /* condition */ (obj) => obj.contest.phase == 'SYSTEM_TEST' || obj.contest.phase == 'FINISHED',
     /* callback */  () => process_systest(ev, contest_id));
 }
 
-/* Checks if contest really ended. (was not extended) */
+/* Checks if contest really ended (was not extended) and collects participating handles. */
 prelim_contest_end = function(ev, contest_id) {
-  wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
-    /* condition */ (obj) => obj.contest.phase !== 'BEFORE' && obj.contest.phase !== 'CODING',
-    /* callback */  () => process_contest_end(ev, contest_id));
+  in_contest_ids.clear();
+  in_contest_handles.length = 0;
+  const user_handles = new Set();
+  db.low
+    .get('users')
+    .map('cf_handles')
+    .value()
+    .forEach((hs) => { if(hs) hs.forEach((h) => user_handles.add(h)); });
+  console.log("Total handle count: " + user_handles.size);
+  call_cf_api('contest.standings', {contestId: contest_id, showUnofficial: true}, 2)
+    .on('end', (obj) => {
+      const handles_in_contest = new Set();
+      obj.rows.forEach((row) => row.party.members.forEach((m) => { if(user_handles.has(m.handle)) handles_in_contest.add(m.handle); }));
+      console.log("CF contest " + ev.name + " has " + handles_in_contest.size + " participants.");
+      if(handles_in_contest.size === 0) return;
+      in_contest_handles = Array.from(handles_in_contest);
+
+      db.low
+        .get('users')
+        .value()
+        .forEach((user) => {
+          if(user.cf_handles)
+            user.cf_handles.forEach((h) => { if(handles_in_contest.has(h)) in_contest_ids.add(user.id); });
+        });
+
+      wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
+        /* condition */ (obj) => obj.contest.phase !== 'BEFORE' && obj.contest.phase !== 'CODING',
+        /* callback */  () => process_contest_end(ev, contest_id));
+    });
 }
 
+prelim_contest_end({name: 'CFzeira', url: 'google.com'}, 894)
 
 module.exports = {
   updateUpcoming: (upcoming) => {
@@ -136,7 +207,7 @@ module.exports = {
     contest_end_handlers.forEach((h) => { if (h) h.cancel(); });
     contest_end_handlers.length = 0;
 
-    call_cf_api('contest.list', null).on('end', (parsedData) => {
+    call_cf_api('contest.list', null, 1).on('end', (parsedData) => {
       try {
         upcoming.length = 0;
         parsedData.forEach( (el) => {
@@ -150,7 +221,7 @@ module.exports = {
             };
             upcoming.push(ev);
             if (el.type === "CF")
-              contest_end_handlers.push(schedule.scheduleJob(new Date((el.startTimeSeconds + el.durationSeconds - 15) * 1000),
+              contest_end_handlers.push(schedule.scheduleJob(new Date((el.startTimeSeconds + el.durationSeconds - 60) * 1000),
                     () => { prelim_contest_end(ev, el.id); }));
           }
         });

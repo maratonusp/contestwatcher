@@ -35,7 +35,7 @@ var Bot = module.exports = {}
 
 /* Marks invalid users that have blocked the bot */
 function mark_invalid() {
-  var text = "Deleting " + invalid_users.size + " invalid users.";
+  let text = "Deleting " + invalid_users.size + " invalid users.";
   db.low
     .get('users')
     .remove((user) => { return invalid_users.has(user.id); })
@@ -44,12 +44,47 @@ function mark_invalid() {
   return text;
 }
 
+/* Adds CF handle to handle list */
+function add_handles(message) {
+  const user = db.user.get(message.chat.id);
+  const hs = message.text.slice(message.text.indexOf(' ') + 1).split(' ');
+  let msg;
+  if(!user.has('cf_handles').value())
+    user.set('cf_handles', []).write();
+  hs.forEach((h) => user.get('cf_handles').push(h).write())
+  msg = "Handles added successfully :)";
+  Bot.sendMessage(message.chat.id, msg, {});
+}
+
+/* Lists added CF handles */
+function list_handles(message) {
+  const user = db.user.get(message.chat.id);
+  let msg;
+  if(!user.has('cf_handles').value() || user.get('cf_handles').size().value() == 0)
+    msg = "No Codeforces handles.";
+  else
+    msg = "Codeforces handles: " + user.get('cf_handles').value().join(', ');
+  Bot.sendMessage(message.chat.id, msg, {})
+}
+
+/* Removes CF handle from handle list */
+function rem_handles(message) {
+  const user = db.user.get(message.chat.id);
+  const hs = new Set(message.text.slice(message.text.indexOf(' ') + 1).split(' '))
+  let msg;
+  if(!user.has('cf_handles').value())
+    user.set('cf_handles', []).write();
+  user.get('cf_handles').remove((h) => hs.has(h)).write();
+  msg = "Handles removed successfully :)";
+  Bot.sendMessage(message.chat.id, msg, {});
+}
+
 Bot.create_bot = (upcoming, judgefetcher) => {
   const bot = new BotAPI(process.env.TELEGRAM_TOKEN, {polling: true});
 
   /* stores messages sent by the last broadcast
    * keys = chatIds, values = messageIds */
-  var last_broadcast = {};
+  let last_broadcast = {};
 
   const send = function(msg, txt) {
     Bot.sendMessage(msg.chat.id, txt, {
@@ -74,11 +109,16 @@ Bot.create_bot = (upcoming, judgefetcher) => {
     });
   }
 
+  /* CF handles stuff */
+  bot.onText(/^\/list_handles(@\w+)*$/, list_handles);
+  bot.onText(/^\/add_handles(@\w+)* .*$/, add_handles);
+  bot.onText(/^\/rem_handles(@\w+)* .*$/, rem_handles);
+
   /* If this command comes from adms, replies to them with the same message.
    * Used to test if /broadcast is correctly formatted */
   bot.onText(/^\/mock_broadcast(@\w+)* .*$/, (message) => {
     if(message.chat.id != admin_id) return;
-    var text = message.text.slice(message.text.indexOf(' ') + 1);
+    let text = message.text.slice(message.text.indexOf(' ') + 1);
     Bot.sendMessage(message.chat.id, text, {
       parse_mode: 'Markdown',
       disable_web_page_preview: true
@@ -89,7 +129,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
    * to all users */
   bot.onText(/^\/broadcast(@\w+)* .*$/, (message) => {
     if(message.chat.id != admin_id) return;
-    var text = message.text.slice(message.text.indexOf(' ') + 1);
+    let text = message.text.slice(message.text.indexOf(' ') + 1);
     last_broadcast = {};
     db.low
       .get('users')
@@ -109,7 +149,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
    * broadcast message. Use with care. */
   bot.onText(/^\/edit_broadcast(@\w+)* .*$/, (message) => {
     if(message.chat.id != admin_id) return;
-    var text = message.text.slice(message.text.indexOf(' ') + 1);
+    let text = message.text.slice(message.text.indexOf(' ') + 1);
     db.low
       .get('users')
       .map('id')
@@ -128,7 +168,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
   /* If this command comes from adms, useful stats are returned */
   bot.onText(/^\/status(@\w+)*$/, (message) => {
     if(message.chat.id != admin_id) return;
-    var text = mark_invalid();
+    let text = mark_invalid();
     let recent = 0, valid = 0, notified = 0;
     const now = Date.now();
     const judges = {
@@ -138,6 +178,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
       csacademy: 0,
       atcoder: 0
     }
+    let total_cf_handles = 0;
     db.low
       .get('users')
       .value()
@@ -150,6 +191,8 @@ Bot.create_bot = (upcoming, judgefetcher) => {
               judges[judge]++;
           });
         }
+        if(user.cf_handles)
+          total_cf_handles += user.cf_handles.length;
         if (user.last_activity !== undefined && now - user.last_activity < 7 * 24 * 60 * 60 * 1000)
           recent++;
       });
@@ -159,14 +202,15 @@ Bot.create_bot = (upcoming, judgefetcher) => {
       text += "\n" + judge + " notifications on: " + judges[judge];
     });
     text += '\nActive users in the last week: ' + recent;
+    text += '\nCF handles total: ' + total_cf_handles;
     send(message, text);
   });
 
   bot.onText(/^\/running(@\w+)*$/, (message) => {
     const user = db.user.get(message.chat.id);
     const maxContests = 7;
-    var validContests = 0;
-    var result = "";
+    let validContests = 0;
+    let result = "";
 
     upcoming.forEach( (entry) => {
       if (entry.time.getTime() > Date.now())
@@ -201,8 +245,8 @@ Bot.create_bot = (upcoming, judgefetcher) => {
   bot.onText(/^\/upcoming(@\w+)*$/, (message) => {
     const user = db.user.get(message.chat.id);
     const maxContests = 7;
-    var validContests = 0;
-    var result = "";
+    let validContests = 0;
+    let result = "";
 
     upcoming.forEach( (entry) => {
       if (entry.time.getTime() < Date.now())
@@ -245,10 +289,10 @@ Bot.create_bot = (upcoming, judgefetcher) => {
   });
 
   bot.onText(/^\/start(@\w+)*$/, (message) => {
-    var response = "";
+    let response = "";
 
-    var id = message.chat.id;
-    var user = db.user.get(id);
+    let id = message.chat.id;
+    let user = db.user.get(id);
 
     if (user.get('notify').value() === true) {
       response = "Looks like you're already registered for reminders. ";
@@ -263,9 +307,9 @@ Bot.create_bot = (upcoming, judgefetcher) => {
   });
 
   bot.onText(/^\/stop(@\w+)*$/m, (message) => {
-    var response = "";
+    let response = "";
 
-    var user = db.user.get(message.chat.id);
+    let user = db.user.get(message.chat.id);
 
     if (user.get('notify').value() === false) {
       response = "Looks like you're already not registered for reminders. ";
@@ -280,15 +324,15 @@ Bot.create_bot = (upcoming, judgefetcher) => {
   });
 
   bot.onText(/^\/enable(@\w+)*/m, (message) => {
-    var pars = message.text.split(' ');
-    var response = "";
+    let pars = message.text.split(' ');
+    let response = "";
     if (pars.length < 2) {
       response = "No judge specified.";
     } else {
-      var user = db.user.get(message.chat.id);
-      var judge = pars[1];
+      let user = db.user.get(message.chat.id);
+      let judge = pars[1];
 
-      var ignored = user
+      let ignored = user
         .has('ignore.' + judge)
         .value();
 
@@ -307,15 +351,15 @@ Bot.create_bot = (upcoming, judgefetcher) => {
   });
 
   bot.onText(/^\/disable(@\w+)*/m, (message) => {
-    var pars = message.text.split(' ');
-    var response = "";
+    let pars = message.text.split(' ');
+    let response = "";
     if (pars.length < 2) {
       response = "No judge specified.";
     } else {
-      var user = db.user.get(message.chat.id);
-      var judge = pars[1];
+      let user = db.user.get(message.chat.id);
+      let judge = pars[1];
 
-      var ignored = user
+      let ignored = user
         .has('ignore.' + judge)
         .value();
 
@@ -334,12 +378,12 @@ Bot.create_bot = (upcoming, judgefetcher) => {
   });
 
   bot.onText(/^\/judges(@\w+)*$/m, (message) => {
-    var user = db.user.get(message.chat.id);
+    let user = db.user.get(message.chat.id);
 
-    var response = "You can /enable or /disable judges with the commands as you wish. Try typing /enable calendar.\n\n";
+    let response = "You can /enable or /disable judges with the commands as you wish. Try typing /enable calendar.\n\n";
     response += "Supported Judges: \n"
 
-    var vals = [
+    let vals = [
       ['codeforces', ''],
       ['topcoder', ''],
       ['codechef', ''],
@@ -348,8 +392,8 @@ Bot.create_bot = (upcoming, judgefetcher) => {
       ['calendar', ' : manually inputed. (codejam, yandex, local events, etc)']
     ];
 
-    for (var i = 0; i < vals.length; i++) {
-      var state = user
+    for (let i = 0; i < vals.length; i++) {
+      let state = user
         .has('ignore.' + vals[i][0])
         .value();
 
@@ -384,7 +428,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
 
 /* Tries to send a message, logging errors. */
 Bot.sendMessage = (chatId, text, options) => {
-  var promise = Bot.bot.sendMessage(chatId, text, options);
+  let promise = Bot.bot.sendMessage(chatId, text, options);
   promise.catch((error) => {
     console.log("Error while sending message: " + error.code + "\n" + JSON.stringify(error.response.body));
     const err = error.response.body.error_code;
