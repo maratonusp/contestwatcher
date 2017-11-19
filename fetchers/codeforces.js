@@ -57,7 +57,7 @@ wait_for_condition_on_api_call = function(name, args, condition, callback) {
         } else if (count_calls++ > 2 * 60 * 24) // 1 day
           handle.cancel();
       }).on('error', () => {
-        if (count_all++ > 2 * 60 * 24) // 1 day
+        if (count_calls++ > 2 * 60 * 24) // 1 day
           handle.cancel()
       });
   });
