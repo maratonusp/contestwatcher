@@ -198,8 +198,6 @@ prelim_contest_end = function(ev, contest_id) {
     });
 }
 
-prelim_contest_end({name: 'CFzeira', url: 'google.com'}, 894)
-
 module.exports = {
   updateUpcoming: (upcoming) => {
     const emitter = new EventEmitter();
