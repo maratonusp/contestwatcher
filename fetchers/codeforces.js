@@ -33,7 +33,7 @@ call_cf_api = function(name, args) {
           return;
         }
         emitter.emit('end', obj.result);
-      } catch(e) { emmiter.emit('error', ''); }
+      } catch(e) { emitter.emit('error', ''); }
     }).on('error', (e) => {
       emitter.emit('error', e.message);
     });
