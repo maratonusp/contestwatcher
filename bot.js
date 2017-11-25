@@ -46,13 +46,22 @@ function mark_invalid() {
 
 /* Adds CF handle to handle list */
 function add_handles(message) {
-  const user = db.user.get(message.chat.id);
-  const hs = message.text.slice(message.text.indexOf(' ') + 1).split(' ');
   let msg;
-  if(!user.has('cf_handles').value())
-    user.set('cf_handles', []).write();
-  hs.forEach((h) => user.get('cf_handles').push(h).write())
-  msg = "Handles added successfully :)";
+  if(message.text.indexOf(' ') === -1)
+    msg = "No handles to add.";
+  else {
+    const user = db.user.get(message.chat.id);
+    const hs = new Set(message.text.slice(message.text.indexOf(' ') + 1).trim().split(' '));
+    if(!user.has('cf_handles').value())
+      user.set('cf_handles', []).write();
+    if(hs.size === 0)
+      msg = "No handles to add.";
+    else {
+      const cur = new Set(user.get('cf_handles').value());
+      Array.from(hs).map((h) => h.trim()).filter((h) => h.length > 0 && !cur.has(h)).forEach((h) => user.get('cf_handles').push(h).write())
+      msg = "Handles added successfully :)";
+    }
+  }
   Bot.sendMessage(message.chat.id, msg, {});
 }
 
@@ -69,13 +78,31 @@ function list_handles(message) {
 
 /* Removes CF handle from handle list */
 function rem_handles(message) {
-  const user = db.user.get(message.chat.id);
-  const hs = new Set(message.text.slice(message.text.indexOf(' ') + 1).split(' '))
   let msg;
-  if(!user.has('cf_handles').value())
-    user.set('cf_handles', []).write();
-  user.get('cf_handles').remove((h) => hs.has(h)).write();
-  msg = "Handles removed successfully :)";
+  if(message.text.indexOf(' ') === -1)
+    msg = "No handles to remove.";
+  else {
+    const user = db.user.get(message.chat.id);
+    const hs = new Set(message.text.slice(message.text.indexOf(' ') + 1).split(' '))
+    if(!user.has('cf_handles').value())
+      user.set('cf_handles', []).write();
+    user.get('cf_handles').remove((h) => hs.has(h)).write();
+    msg = "Handles removed successfully :)";
+  }
+  Bot.sendMessage(message.chat.id, msg, {});
+}
+
+/* Shows help message for handles */
+function help_handles(message) {
+  let msg = "You can have a list of codeforces handles to watch. If you have " +
+    "codeforces notifications enabled, you will be notified about all contests, " +
+    "but you will only receive information regarding the system testing and " +
+    "rating changes for contests that some user with handle on " +
+    "your handle list is participating.\n\n" +
+    "The following commands are for handling your handles:\n" +
+    "/add_handles h1 h2 h3 - add codeforce handles to your handle list\n" +
+    "/rem_handles h1 h2 h3 - remove codeforce handles to your handle list\n" +
+    "/list_handles - list codeforce handles in your handle list\n";
   Bot.sendMessage(message.chat.id, msg, {});
 }
 
@@ -111,8 +138,9 @@ Bot.create_bot = (upcoming, judgefetcher) => {
 
   /* CF handles stuff */
   bot.onText(/^\/list_handles(@\w+)*$/, list_handles);
-  bot.onText(/^\/add_handles(@\w+)* .*$/, add_handles);
-  bot.onText(/^\/rem_handles(@\w+)* .*$/, rem_handles);
+  bot.onText(/^\/help_handles(@\w+)*$/, help_handles);
+  bot.onText(/^\/add_handles(@\w+)* ?.*$/, add_handles);
+  bot.onText(/^\/rem_handles(@\w+)* ?.*$/, rem_handles);
 
   /* If this command comes from adms, replies to them with the same message.
    * Used to test if /broadcast is correctly formatted */
@@ -412,6 +440,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
       "/stop - Stop receiving reminders.\n" +
       "/upcoming - show the next scheduled contests.\n" +
       "/running - show running contests.\n" +
+      "/help_handles - info on how to add and remove codeforces handles.\n" +
       "/refresh - refresh the contest list. This is done automatically once per day.\n" +
       "/judges - list supported judges.\n" +
       "/enable judge - enable notifications for some judge.\n" +
