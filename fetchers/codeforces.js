@@ -133,11 +133,10 @@ process_final = function(ratings, ev, contest_id) {
           rs.push(mp.get(h));
       });
       rs.sort((a, b) => a.rank - b.rank);
-      let largest = rs.reduce((acc, cur) => Math.max(acc, cur.handle.length), 0);
       rs.forEach((r) => {
         let prefix = "";
         if(r.newRating >= r.oldRating) prefix = "+";
-        msg +='\n<code>' + r.handle + ' '.repeat(largest - r.handle.length + 1) + "</code>" + html_msg.escape(r.oldRating + ' → '+ r.newRating + ' (' + prefix + (r.newRating - r.oldRating) + ')');
+        msg += '\n\n<b>' + html_msg.escape(r.handle) + '</b>\n' + html_msg.escape(r.oldRating + ' → '+ r.newRating + ' (' + prefix + (r.newRating - r.oldRating) + ')');
       });
       bot.sendMessage(user.id, msg, { parse_mode: 'html', disable_web_page_preview: true });
     });
