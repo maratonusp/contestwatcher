@@ -455,7 +455,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
   // });
 
   Bot.bot = bot;
-  Bot.sendMessage(admin_id, "Booting up.", {});
+  Bot.sendMessage(admin_id, "<code>Booting up.</code>", {parse_mode: 'html'});
 }
 
 /* Tries to send a message, logging errors. */
