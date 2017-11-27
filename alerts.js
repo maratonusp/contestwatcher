@@ -1,6 +1,7 @@
 const schedule = require('node-schedule');
 const bot = require('./bot');
 const db = require('./db');
+const html_msg = require('./html-msg');
 
 const event_handlers = []
 
@@ -12,7 +13,7 @@ const day = 24 * hour;
 const alerts = module.exports = {}
 
 warn = function (ev, left, fetcher) {
-  var message = '[' + ev.name + '](' + ev.url + ') will start in ' + left + '.';
+  var message = html_msg.make_link(ev.name, ev.url) + html_msg.escape(' will start in ' + left + '.');
   if(fetcher.announceContest !== undefined)
     fetcher.announceContest(ev, left);
   else // default behavior
@@ -25,7 +26,7 @@ warn = function (ev, left, fetcher) {
       .value()
       .forEach(function (id) {
         bot.sendMessage(id, message, {
-          parse_mode: 'Markdown',
+          parse_mode: 'html',
           disable_web_page_preview: true
         });
     });

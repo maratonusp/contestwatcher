@@ -1,6 +1,7 @@
 const BotAPI = require('node-telegram-bot-api');
 const dateformat = require('dateformat');
 const process = require('process');
+const html_msg = require('./html-msg');
 
 const botan = require('botanio')(process.env.BOTANIO_TOKEN);
 const using_botanio = (process.env.BOTANIO_TOKEN !== undefined);
@@ -120,6 +121,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
     });
   };
 
+
   bot.onText(/./, (message) => {
     // mark last activity
     db.user.get(message.chat.id).set('last_activity', Date.now()).write();
@@ -231,7 +233,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
     });
     text += '\nActive users in the last week: ' + recent;
     text += '\nCF handles total: ' + total_cf_handles;
-    send(message, text);
+    send(message, html_msg.escape(text));
   });
 
   bot.onText(/^\/running(@\w+)*$/, (message) => {
@@ -254,18 +256,18 @@ Bot.create_bot = (upcoming, judgefetcher) => {
         const d = entry.duration / 60;
         const min = Math.ceil((entry.time.getTime() + entry.duration*1000 - Date.now()) / (1000 * 60));
         result +=
-          '<a href="' + entry.url + '">' + entry.name + "</a> " +
-          "(" + Math.floor(d / 60) + "h" + (d % 60 == 0? "" : (d % 60 < 10? "0" : "") + (d % 60).toString())+ ")\n" +
-          "ends in <a href=\"" + time_link(entry.name, entry.time) + '">' +  num(min / (60 * 24), 'd ') + num((min / 60) % 24, 'h ') + (min % 60).toString() + "m</a>" +
+          html_msg.make_link(entry.name, entry.url) +
+          html_msg.escape(" (" + Math.floor(d / 60) + "h" + (d % 60 == 0? "" : (d % 60 < 10? "0" : "") + (d % 60).toString())+ ")\nends in ") +
+          html_msg.make_link(num(min / (60 * 24), 'd ') + num((min / 60) % 24, 'h ') + (min % 60).toString() + "m", time_link(entry.name, entry.time)) +
           "\n\n";
       }
     });
 
     if (maxContests < validContests)
-      result += "And other " + (validContests - maxContests) + " running besides those...";
+      result += html_msg.escape("And other " + (validContests - maxContests) + " running besides those...");
 
     if (result == "")
-      result = "No running contests :(";
+      result = html_msg.escape("No running contests :(");
 
     send(message, result);
   });
@@ -290,27 +292,27 @@ Bot.create_bot = (upcoming, judgefetcher) => {
         const d = entry.duration / 60
         const min = Math.ceil((entry.time.getTime() - Date.now()) / (1000 * 60))
         result +=
-          '<a href="' + entry.url + '">' + entry.name + "</a> " +
-          "(" + Math.floor(d / 60) + "h" + (d % 60 == 0? "" : (d % 60 < 10? "0" : "") + (d % 60).toString())+ ")\n" +
-          "starts in <a href=\"" + time_link(entry.name, entry.time) + '">' +  num(min / (60 * 24), 'd ') + num((min / 60) % 24, 'h ') + (min % 60).toString() + "m</a>" +
+          html_msg.make_link(entry.name, entry.url) + " " +
+          html_msg.escape("(" + Math.floor(d / 60) + "h" + (d % 60 == 0? "" : (d % 60 < 10? "0" : "") + (d % 60).toString())+ ")\n") +
+          "starts in " + html_msg.make_link(num(min / (60 * 24), 'd ') + num((min / 60) % 24, 'h ') + (min % 60).toString() + "m", time_link(entry.name, entry.time)) +
           "\n\n";
       }
     });
 
     if (maxContests < validContests)
-      result += "And other " + (validContests - maxContests) + " scheduled in the next 2 weeks...";
+      result += html_msg.escape("And other " + (validContests - maxContests) + " scheduled in the next 2 weeks...");
 
     if (result == "")
-      result = "No upcoming contests :(";
+      result = html_msg.escape("No upcoming contests :(");
 
     send(message, result);
   });
 
   bot.onText(/^\/refresh(@\w+)*$/, (message) => {
     if (Date.now() - last_refresh.getTime() < 1000 * 60 * 10) {
-      send(message, "Contest list was refreshed less than 10 minutes ago.");
+      send(message, html_msg.escape("Contest list was refreshed less than 10 minutes ago."));
     } else {
-      send(message, "Refreshing contest list... Please wait a bit before using /upcoming.");
+      send(message, html_msg.escape("Refreshing contest list... Please wait a bit before using /upcoming."));
       judgefetcher.updateUpcoming(upcoming);
       last_refresh = new Date();
     }
@@ -331,7 +333,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
       response = "You have been registered and will receive reminders for the contests! ";
     }
     response += "Use /stop if you want to stop receiving reminders.";
-    send(message, response);
+    send(message, html_msg.escape(response));
   });
 
   bot.onText(/^\/stop(@\w+)*$/m, (message) => {
@@ -348,7 +350,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
       response = "You have been unregistered and will not receive reminders for the contests :(. ";
     }
     response += "Use /start if you want to receive reminders.";
-    send(message, response);
+    send(message, html_msg.escape(response));
   });
 
   bot.onText(/^\/enable(@\w+)*/m, (message) => {
@@ -375,7 +377,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
       }
     }
 
-    send(message, response);
+    send(message, html_msg.escape(response));
   });
 
   bot.onText(/^\/disable(@\w+)*/m, (message) => {
@@ -402,7 +404,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
       }
     }
 
-    send(message, response);
+    send(message, html_msg.escape(response));
   });
 
   bot.onText(/^\/judges(@\w+)*$/m, (message) => {
@@ -430,14 +432,14 @@ Bot.create_bot = (upcoming, judgefetcher) => {
       response += vals[i][0] + vals[i][1] + '\n';
     }
 
-    send(message, response);
+    send(message, html_msg.escape(response));
   });
 
   bot.onText(/^\/help(@\w+)*$/m, (message) => {
-    send(message, "Hello, I am ContestWatcher Bot :D. I list programming contests from Codeforces, Topcoder, Codechef, CSAcademy and AtCoder.\n\n" +
+    send(message, html_msg.escape("Hello, I am ContestWatcher Bot :D. I list programming contests from Codeforces, Topcoder, Codechef, CSAcademy and AtCoder.\n\n" +
       "You can control me by sending these commands: \n\n" +
-      "/start - Start receiving reminders before the contests. I'll send a reminder 1 day and another 1 hour before each contest.\n" +
-      "/stop - Stop receiving reminders.\n" +
+      "/start - start receiving reminders before the contests. I'll send a reminder 1 day and another 1 hour before each contest.\n" +
+      "/stop - stop receiving reminders.\n" +
       "/upcoming - show the next scheduled contests.\n" +
       "/running - show running contests.\n" +
       "/help_handles - info on how to add and remove codeforces handles.\n" +
@@ -445,7 +447,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
       "/judges - list supported judges.\n" +
       "/enable judge - enable notifications for some judge.\n" +
       "/disable judge - disable notifications for some judge.\n" +
-      "/help - shows this help message.");
+      "/help - shows this help message."));
   });
 
   // bot.onText(/^\/hue(@\w+)*$/, (message) => {
@@ -453,6 +455,7 @@ Bot.create_bot = (upcoming, judgefetcher) => {
   // });
 
   Bot.bot = bot;
+  Bot.sendMessage(admin_id, "Booting up.", {});
 }
 
 /* Tries to send a message, logging errors. */
@@ -460,6 +463,8 @@ Bot.sendMessage = (chatId, text, options) => {
   let promise = Bot.bot.sendMessage(chatId, text, options);
   promise.catch((error) => {
     console.log("Error while sending message: " + error.code + "\n" + JSON.stringify(error.response.body));
+    console.log("Original message: " + text);
+    console.log("Options: " + JSON.stringify(options));
     const err = error.response.body.error_code;
     // if the bot has been "banned" by this chat
     if (err === 400 || err === 403)
@@ -467,3 +472,4 @@ Bot.sendMessage = (chatId, text, options) => {
   });
   return promise;
 }
+

@@ -5,6 +5,7 @@ const bot = require('../bot');
 const db = require('../db');
 const qs = require('querystring');
 const process = require('process');
+const html_msg = require('../html-msg');
 
 /* Calls method name with arguments args (from codeforces API), returns an emitter that calls 'end' returning the parsed JSON when the request ends. The emitter returns 'error' instead if something went wrong */
 call_cf_api = function(name, args, retry_times) {
@@ -91,7 +92,7 @@ flush_cf_msgs = function(buffer, rejectExtra) {
     .value()
     .forEach((id) => {
       bot.sendMessage(id, msg, {
-        parse_mode: 'Markdown',
+        parse_mode: 'html',
         disable_web_page_preview: true
       });
     });
@@ -125,7 +126,7 @@ process_final = function(ratings, ev, contest_id) {
     .reject((user) => { return !user.notify || user.ignore["codeforces"] || !in_contest_ids.has(user.id); })
     .value()
     .forEach((user) => {
-      let msg = 'Ratings for [' + ev.name + '](' + ev.url + ') are out!';
+      let msg = 'Ratings for ' + html_msg.make_link(ev.name, ev.url) + ' are out!';
       let rs = []; // ratings for handles from user
       user.cf_handles.forEach((h) => {
         if(mp.has(h))
@@ -135,15 +136,15 @@ process_final = function(ratings, ev, contest_id) {
       rs.forEach((r) => {
         let prefix = "";
         if(r.newRating >= r.oldRating) prefix = "+";
-        msg += '\n' + r.handle + ': ' + r.oldRating + ' -> ' + r.newRating + ' (' + prefix + (r.newRating - r.oldRating) + ')'
+        msg += html_msg.escape('\n' + r.handle + ': ' + r.oldRating + ' -> ' + r.newRating + ' (' + prefix + (r.newRating - r.oldRating) + ')');
       });
-      bot.sendMessage(user.id, msg, { parse_mode: 'Markdown', disable_web_page_preview: true });
+      bot.sendMessage(user.id, msg, { parse_mode: 'html', disable_web_page_preview: true });
     });
 }
 
 /* Called when system testing ends, checks for rating changes */
 process_ratings = function(ev, contest_id) {
-  contest_msg_all('System testing has finished for [' + ev.name + '](' + ev.url + '). Waiting for rating changes.');
+  contest_msg_all('System testing has finished for ' + html_msg.make_link(ev.name, ev.url) + '. Waiting for rating changes.');
   wait_for_condition_on_api_call('contest.ratingChanges', {contestId: contest_id},
     /* condition */ (obj) => obj.length > 0,
     /* callback */  (obj) => process_final(obj, ev, contest_id));
@@ -151,7 +152,7 @@ process_ratings = function(ev, contest_id) {
 
 /* Called when system testing starts, checks for end of system testing */
 process_systest = function(ev, contest_id) {
-  contest_msg_all('System testing has started for [' + ev.name + '](' + ev.url + ').');
+  contest_msg_all('System testing has started for ' + html_msg.make_link(ev.name, ev.url) + '.');
   wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
     /* condition */ (obj) => obj.contest.phase == 'FINISHED',
     /* callback */  () => process_ratings(ev, contest_id));
@@ -159,7 +160,7 @@ process_systest = function(ev, contest_id) {
 
 /* Called when contest ends, checks for start of system testing */
 process_contest_end = function(ev, contest_id) {
-  contest_msg_all('[' + ev.name + '](' + ev.url + ') has just ended. Waiting for system testing.');
+  contest_msg_all(html_msg.make_link(ev.name, ev.url) + ' has just ended. Waiting for system testing.');
   wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
     /* condition */ (obj) => obj.contest.phase == 'SYSTEM_TEST' || obj.contest.phase == 'FINISHED',
     /* callback */  () => process_systest(ev, contest_id));
@@ -191,6 +192,7 @@ prelim_contest_end = function(ev, contest_id) {
           if(user.cf_handles)
             user.cf_handles.forEach((h) => { if(handles_in_contest.has(h)) in_contest_ids.add(user.id); });
         });
+      console.log("CF contest " + ev.name + " has participants from " + in_contest_ids.size + " chats.");
 
       wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
         /* condition */ (obj) => obj.contest.phase !== 'BEFORE' && obj.contest.phase !== 'CODING',
@@ -234,5 +236,5 @@ module.exports = {
 
     return emitter;
   },
-  announceContest: (ev, left) => { simple_msg_all('[' + ev.name + '](' + ev.url + ') will start in ' + left + '.'); }
+  announceContest: (ev, left) => { simple_msg_all(html_msg.make_link(ev.name, ev.url) + html_msg.escape(' will start in ' + left + '.')); }
 };
