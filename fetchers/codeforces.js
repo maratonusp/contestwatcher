@@ -18,12 +18,6 @@ call_cf_api = function(name, args, retry_times) {
   try_= function(times) {
     console.log('CF request: ' + 'http://codeforces.com/api/' + name + '?' + qs.stringify(args));
     http.get('http://codeforces.com/api/' + name + '?' + qs.stringify(args), (res) => {
-      if (res.statusCode !== 200) {
-        res.resume();
-        if(times > 0) try_(times - 1);
-        else emitter.emit('error', 'Status Code: ' + res.statusCode);
-        return;
-      }
       res.setEncoding('utf8');
 
       let data = '';
