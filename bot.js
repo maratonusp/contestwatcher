@@ -1,6 +1,8 @@
 const BotAPI = require('node-telegram-bot-api');
 const dateformat = require('dateformat');
 const process = require('process');
+const EventEmitter = require('events');
+const cfAPI = require('./judgeAPIs/cfAPI')
 
 const botan = require('botanio')(process.env.BOTANIO_TOKEN);
 const using_botanio = (process.env.BOTANIO_TOKEN !== undefined);
@@ -46,23 +48,59 @@ function mark_invalid() {
 
 /* Adds CF handle to handle list */
 function add_handles(message) {
-  let msg;
+  const emitter = new EventEmitter();
+  const user = db.user.get(message.chat.id);
+  
+  emitter.on('add', (handles, wrong_handles) => {
+    const cur = new Set(user.get('cf_handles').value());
+    Array.from(handles).map((h) => h.trim()).filter((h) => h.length > 0 && !cur.has(h)).forEach((h) => user.get('cf_handles').push(h).write());
+    if (wrong_handles.length == 0) emitter.emit('end', "Handles added successfully :)");
+    else {
+      wrong_handles.sort()
+      wrong_handles = wrong_handles.map((h) => '<code>' + h + '</code>')
+      emitter.emit('end', "Some of the handles could not be added, mainly, " + wrong_handles.join(', '))
+    }
+  });
+  emitter.on('end', (txt, handles) => {
+    Bot.sendMessage(message.chat.id, txt, {
+      parse_mode: 'html',
+      disable_web_page_preview: true
+    });
+  });
+
   if(message.text.indexOf(' ') === -1)
-    msg = "No handles to add.";
+    emitter.emit('end', "No handles to add.");
   else {
-    const user = db.user.get(message.chat.id);
     const hs = new Set(message.text.slice(message.text.indexOf(' ') + 1).trim().split(' '));
     if(!user.has('cf_handles').value())
       user.set('cf_handles', []).write();
     if(hs.size === 0)
-      msg = "No handles to add.";
+      emitter.emit('end', "No handles to add.");
     else {
-      const cur = new Set(user.get('cf_handles').value());
-      Array.from(hs).map((h) => h.trim()).filter((h) => h.length > 0 && !cur.has(h)).forEach((h) => user.get('cf_handles').push(h).write())
-      msg = "Handles added successfully :)";
+      if (hs.length > 100) emitter.emit('end', "I'm not about to do that.");
+      else {
+        var allHandles = Array.from(hs).map((h) => h.trim()).filter((h) => h.length > 0)
+        cfAPI.call_cf_api('user.info', {handles: allHandles.join(';')}, 1).on('error', () => {
+          var wrong_handles = []
+          var handlesToAdd = allHandles.length
+          emitter.on('check', (handle) => {
+            cfAPI.call_cf_api('user.info', {handles: handle}, 2).on('error', () => {
+              wrong_handles.push(handle);
+              hs.delete(handle)
+              if (--handlesToAdd == 0) emitter.emit('add', hs, wrong_handles);
+            }).on('end', () => {
+              if (--handlesToAdd == 0) emitter.emit('add', hs, wrong_handles);
+            });
+          });
+          for (var i in allHandles) {
+            emitter.emit('check', allHandles[i]);
+          }
+        }).on('end', () => {
+          emitter.emit('add', hs, [])
+        })
+      }
     }
   }
-  Bot.sendMessage(message.chat.id, msg, {});
 }
 
 /* Lists added CF handles */
