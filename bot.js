@@ -47,8 +47,20 @@ function mark_invalid() {
   return text;
 }
 
+let add_handle_reply_msg = "Please send me your handle. :D";
+
 /* Adds CF handle to handle list */
 function add_handles(message) {
+  if(message.text.indexOf(' ') === -1) {
+    Bot.sendMessage(message.chat.id, add_handle_reply_msg, {
+      reply_to_message_id: message.message_id,
+      reply_markup: {
+        force_reply: true,
+        selective: true
+      }
+    });
+    return;
+  }
   const emitter = new EventEmitter();
   const user = db.user.get(message.chat.id);
 
@@ -68,45 +80,41 @@ function add_handles(message) {
     });
   });
 
-  if(message.text.indexOf(' ') === -1)
-    emitter.emit('end', "No handles to add.");
+  const user_cur = new Set(user.get('cf_handles').value());
+  const allHandles =
+    Array.from(new Set(
+      message.text.slice(message.text.indexOf(' ') + 1)
+      .trim().split(' ')))
+      .map((h) => h.trim()).
+      filter((h) => h.length > 0 && !user_cur.has(h));
+  if(!user.has('cf_handles').value())
+    user.set('cf_handles', []).write();
+  if(allHandles.length === 0)
+    emitter.emit('end', "No new handles to add.");
   else {
-    const user_cur = new Set(user.get('cf_handles').value());
-    const allHandles =
-      Array.from(new Set(
-        message.text.slice(message.text.indexOf(' ') + 1)
-        .trim().split(' ')))
-        .map((h) => h.trim()).
-        filter((h) => h.length > 0 && !user_cur.has(h));
-    if(!user.has('cf_handles').value())
-      user.set('cf_handles', []).write();
-    if(allHandles.length === 0)
-      emitter.emit('end', "No new handles to add.");
-    else {
-      if (allHandles.length > 100) {
-        console.log('User ' + message.chat.id + ' tried to add more than 100 handles.');
-        emitter.emit('end', "I'm not about to do that.");
-      } else {
-        const handles_set = new Set(allHandles);
-        cfAPI.call_cf_api('user.info', {handles: allHandles.join(';')}, 1).on('error', () => {
-          var wrong_handles = []
-          var handlesToAdd = allHandles.length
-          emitter.on('check', (handle) => {
-            cfAPI.call_cf_api('user.info', {handles: handle}, 2).on('error', () => {
-              wrong_handles.push(handle);
-              handles_set.delete(handle)
-              if (--handlesToAdd == 0) emitter.emit('add', handles_set, wrong_handles);
-            }).on('end', () => {
-              if (--handlesToAdd == 0) emitter.emit('add', handles_set, wrong_handles);
-            });
+    if (allHandles.length > 100) {
+      console.log('User ' + message.chat.id + ' tried to add more than 100 handles.');
+      emitter.emit('end', "I'm not about to do that.");
+    } else {
+      const handles_set = new Set(allHandles);
+      cfAPI.call_cf_api('user.info', {handles: allHandles.join(';')}, 1).on('error', () => {
+        var wrong_handles = []
+        var handlesToAdd = allHandles.length
+        emitter.on('check', (handle) => {
+          cfAPI.call_cf_api('user.info', {handles: handle}, 2).on('error', () => {
+            wrong_handles.push(handle);
+            handles_set.delete(handle)
+            if (--handlesToAdd == 0) emitter.emit('add', handles_set, wrong_handles);
+          }).on('end', () => {
+            if (--handlesToAdd == 0) emitter.emit('add', handles_set, wrong_handles);
           });
-          for (var i in allHandles) {
-            emitter.emit('check', allHandles[i]);
-          }
-        }).on('end', () => {
-          emitter.emit('add', handles_set, [])
-        })
-      }
+        });
+        for (var i in allHandles) {
+          emitter.emit('check', allHandles[i]);
+        }
+      }).on('end', () => {
+        emitter.emit('add', handles_set, [])
+      })
     }
   }
 }
@@ -166,10 +174,19 @@ Bot.create_bot = (upcoming, judgefetcher) => {
     });
   };
 
-
-  bot.onText(/./, (message) => {
+  // will match ANYTHING
+  bot.on('message', (msg) => {
     // mark last activity
-    db.user.get(message.chat.id).set('last_activity', Date.now()).write();
+    db.user.get(msg.chat.id).set('last_activity', Date.now()).write();
+    // check for reply on handle add
+    if(msg.reply_to_message) {
+      let rp = msg.reply_to_message;
+      if(rp.text === add_handle_reply_msg) {
+        let cp = JSON.parse(JSON.stringify(msg)); // deep copy
+        cp.text = "/add_handles " + cp.text;
+        add_handles(cp);
+      }
+    }
   });
 
   // botanio stuff
