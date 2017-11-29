@@ -1,82 +1,8 @@
-const http = require('http');
 const EventEmitter = require('events');
 const schedule = require('node-schedule');
 const bot = require('../bot');
 const db = require('../db');
-const qs = require('querystring');
-const process = require('process');
-const html_msg = require('../html-msg');
-
-/* Calls method name with arguments args (from codeforces API), returns an emitter that calls 'end' returning the parsed JSON when the request ends. The emitter returns 'error' instead if something went wrong */
-call_cf_api = function(name, args, retry_times) {
-  const emitter = new EventEmitter();
-
-  emitter.on('error', (extra_info) => {
-    console.log('Call to ' + name + ' failed. ' + extra_info);
-  });
-
-  let try_;
-  try_= function(times) {
-    console.log('CF request: ' + 'http://codeforces.com/api/' + name + '?' + qs.stringify(args));
-    http.get('http://codeforces.com/api/' + name + '?' + qs.stringify(args), (res) => {
-      if (res.statusCode !== 200) {
-        res.resume();
-        if(times > 0) try_(times - 1);
-        else emitter.emit('error', 'Status Code: ' + res.statusCode);
-        return;
-      }
-      res.setEncoding('utf8');
-
-      let data = '';
-
-      res.on('data', (chunk) => data += chunk);
-      res.on('end', () => {
-        let obj;
-        try {
-          obj = JSON.parse(data);
-          if (obj.status == "FAILED") {
-            if(times > 0) try_(times - 1);
-            else emitter.emit('error', 'Comment: ' + obj.comment);
-            return;
-          }
-        } catch(e) {
-          if(times > 0) try_(times - 1);
-          else emitter.emit('error', '');
-          return;
-        }
-        emitter.emit('end', obj.result);
-      }).on('error', (e) => {
-        if(times > 0) try_(times - 1);
-        else emitter.emit('error', e.message);
-      });
-    }).on('error', (e) => {
-      if(times > 0) try_(times - 1);
-      else emitter.emit('error', e.message);
-    });
-  }
-  try_(retry_times);
-
-  return emitter;
-};
-
-/* Calls cf api function 'name' every 30 seconds until condition is satisfied, and then calls callback. Tries at most for a day, if it is not satisfied, then it gives up. */
-wait_for_condition_on_api_call = function(name, args, condition, callback) {
-  const emitter = new EventEmitter();
-  let count_calls = 0;
-  let handle = schedule.scheduleJob('/30 * * * * *', () => {
-    call_cf_api(name, args, 0)
-      .on('end', (obj) => {
-        if (condition(obj)) {
-          handle.cancel();
-          callback(obj);
-        } else if (count_calls++ > 2 * 60 * 24) // 1 day
-          handle.cancel();
-      }).on('error', () => {
-        if (count_calls++ > 2 * 60 * 24) // 1 day
-          handle.cancel()
-      });
-  });
-}
+const cfAPI = require('../judgeAPIs/cfAPI');
 
 const contest_end_handlers = [];
 
@@ -145,7 +71,7 @@ process_final = function(ratings, ev, contest_id) {
 /* Called when system testing ends, checks for rating changes */
 process_ratings = function(ev, contest_id) {
   contest_msg_all('System testing has finished for ' + html_msg.make_link(ev.name, ev.url) + '. Waiting for rating changes.');
-  wait_for_condition_on_api_call('contest.ratingChanges', {contestId: contest_id},
+  cfAPI.wait_for_condition_on_api_call('contest.ratingChanges', {contestId: contest_id},
     /* condition */ (obj) => obj.length > 0,
     /* callback */  (obj) => process_final(obj, ev, contest_id));
 }
@@ -153,7 +79,7 @@ process_ratings = function(ev, contest_id) {
 /* Called when system testing starts, checks for end of system testing */
 process_systest = function(ev, contest_id) {
   contest_msg_all('System testing has started for ' + html_msg.make_link(ev.name, ev.url) + '.');
-  wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
+  cfAPI.wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
     /* condition */ (obj) => obj.contest.phase == 'FINISHED',
     /* callback */  () => process_ratings(ev, contest_id));
 }
@@ -161,7 +87,7 @@ process_systest = function(ev, contest_id) {
 /* Called when contest ends, checks for start of system testing */
 process_contest_end = function(ev, contest_id) {
   contest_msg_all(html_msg.make_link(ev.name, ev.url) + ' has just ended. Waiting for system testing.');
-  wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
+  cfAPI.wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
     /* condition */ (obj) => obj.contest.phase == 'SYSTEM_TEST' || obj.contest.phase == 'FINISHED',
     /* callback */  () => process_systest(ev, contest_id));
 }
@@ -177,7 +103,7 @@ prelim_contest_end = function(ev, contest_id) {
     .value()
     .forEach((hs) => { if(hs) hs.forEach((h) => user_handles.add(h)); });
   console.log("Total handle count: " + user_handles.size);
-  call_cf_api('contest.standings', {contestId: contest_id, showUnofficial: true}, 2)
+  cfAPI.call_cf_api('contest.standings', {contestId: contest_id, showUnofficial: true}, 2)
     .on('end', (obj) => {
       const handles_in_contest = new Set();
       obj.rows.forEach((row) => row.party.members.forEach((m) => { if(user_handles.has(m.handle)) handles_in_contest.add(m.handle); }));
@@ -194,7 +120,7 @@ prelim_contest_end = function(ev, contest_id) {
         });
       console.log("CF contest " + ev.name + " has participants from " + in_contest_ids.size + " chats.");
 
-      wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
+      cfAPI.wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
         /* condition */ (obj) => obj.contest.phase !== 'BEFORE' && obj.contest.phase !== 'CODING',
         /* callback */  () => process_contest_end(ev, contest_id));
     });
@@ -207,7 +133,7 @@ module.exports = {
     contest_end_handlers.forEach((h) => { if (h) h.cancel(); });
     contest_end_handlers.length = 0;
 
-    call_cf_api('contest.list', null, 1).on('end', (parsedData) => {
+    cfAPI.call_cf_api('contest.list', null, 1).on('end', (parsedData) => {
       try {
         upcoming.length = 0;
         parsedData.forEach( (el) => {
