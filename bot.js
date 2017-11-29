@@ -50,15 +50,14 @@ function mark_invalid() {
 function add_handles(message) {
   const emitter = new EventEmitter();
   const user = db.user.get(message.chat.id);
-  
+
   emitter.on('add', (handles, wrong_handles) => {
-    const cur = new Set(user.get('cf_handles').value());
-    Array.from(handles).map((h) => h.trim()).filter((h) => h.length > 0 && !cur.has(h)).forEach((h) => user.get('cf_handles').push(h).write());
+    Array.from(handles).forEach((h) => user.get('cf_handles').push(h).write());
     if (wrong_handles.length == 0) emitter.emit('end', "Handles added successfully :)");
     else {
       wrong_handles.sort()
       wrong_handles = wrong_handles.map((h) => '<code>' + h + '</code>')
-      emitter.emit('end', "Some of the handles could not be added, mainly, " + wrong_handles.join(', '))
+      emitter.emit('end', "These handles could not be added: " + wrong_handles.join(', ') + '.')
     }
   });
   emitter.on('end', (txt, handles) => {
@@ -71,32 +70,40 @@ function add_handles(message) {
   if(message.text.indexOf(' ') === -1)
     emitter.emit('end', "No handles to add.");
   else {
-    const hs = new Set(message.text.slice(message.text.indexOf(' ') + 1).trim().split(' '));
+    const user_cur = new Set(user.get('cf_handles').value());
+    const allHandles =
+      Array.from(new Set(
+        message.text.slice(message.text.indexOf(' ') + 1)
+        .trim().split(' ')))
+        .map((h) => h.trim()).
+        filter((h) => h.length > 0 && !user_cur.has(h));
     if(!user.has('cf_handles').value())
       user.set('cf_handles', []).write();
-    if(hs.size === 0)
-      emitter.emit('end', "No handles to add.");
+    if(allHandles.length === 0)
+      emitter.emit('end', "No new handles to add.");
     else {
-      if (hs.length > 100) emitter.emit('end', "I'm not about to do that.");
-      else {
-        var allHandles = Array.from(hs).map((h) => h.trim()).filter((h) => h.length > 0)
+      if (allHandles.length > 100) {
+        console.log('User ' + message.chat.id + ' tried to add more than 100 handles.');
+        emitter.emit('end', "I'm not about to do that.");
+      } else {
+        const handles_set = new Set(allHandles);
         cfAPI.call_cf_api('user.info', {handles: allHandles.join(';')}, 1).on('error', () => {
           var wrong_handles = []
           var handlesToAdd = allHandles.length
           emitter.on('check', (handle) => {
             cfAPI.call_cf_api('user.info', {handles: handle}, 2).on('error', () => {
               wrong_handles.push(handle);
-              hs.delete(handle)
-              if (--handlesToAdd == 0) emitter.emit('add', hs, wrong_handles);
+              handles_set.delete(handle)
+              if (--handlesToAdd == 0) emitter.emit('add', handles_set, wrong_handles);
             }).on('end', () => {
-              if (--handlesToAdd == 0) emitter.emit('add', hs, wrong_handles);
+              if (--handlesToAdd == 0) emitter.emit('add', handles_set, wrong_handles);
             });
           });
           for (var i in allHandles) {
             emitter.emit('check', allHandles[i]);
           }
         }).on('end', () => {
-          emitter.emit('add', hs, [])
+          emitter.emit('add', handles_set, [])
         })
       }
     }
