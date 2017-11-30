@@ -2,6 +2,7 @@ const https = require('https');
 const EventEmitter = require('events');
 
 module.exports = {
+  name: "csacademy",
   updateUpcoming: (upcoming) => {
     const emitter = new EventEmitter();
 

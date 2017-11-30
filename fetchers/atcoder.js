@@ -17,6 +17,7 @@ function valid(duration){
 }
 
 module.exports = {
+  name: "atcoder",
   updateUpcoming: (upcoming) => {
     const emitter = new EventEmitter();
 

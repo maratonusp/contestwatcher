@@ -3,6 +3,7 @@ const EventEmitter = require('events');
 const moment = require('moment-timezone');
 
 module.exports = {
+  name: "codechef",
   updateUpcoming: (upcoming) => {
     const emitter = new EventEmitter();
 

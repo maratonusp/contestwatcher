@@ -2,6 +2,7 @@ const EventEmitter = require('events');
 const ical = require('ical');
 
 module.exports = {
+  name: "calendar",
   updateUpcoming: (upcoming) => {
     const emitter = new EventEmitter();
 

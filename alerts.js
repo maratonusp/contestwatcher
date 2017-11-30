@@ -3,7 +3,7 @@ const bot = require('./bot');
 const db = require('./db');
 const html_msg = require('./html-msg');
 
-const event_handlers = []
+let event_handlers = []
 
 const sec = 1000;
 const min = 60 * sec;
@@ -32,12 +32,18 @@ warn = function (ev, left, fetcher) {
     });
 };
 
-alerts.reset_alerts = function(upcoming, get_fetcher) {
-  event_handlers.forEach((h) => { if (h) h.cancel(); });
-  event_handlers.length = 0;
+alerts.reset_alerts = () => {
+  console.log("Erasing all alerts for upcoming events");
+  event_handlers.forEach((handler) => { 
+    if(handler) handler.cancel(); 
+  });
+  event_handlers = [];
+};
+
+alerts.add_alerts = (upcoming, fetcher) => {
+  console.log("Registering " + upcoming.length + " " + fetcher.name + " events");
   upcoming.forEach((ev) => {
-    const fetcher = get_fetcher(ev.judge).object;
     event_handlers.push(schedule.scheduleJob(new Date(ev.time.getTime() - day), () => { warn(ev, '1 day', fetcher); }));
     event_handlers.push(schedule.scheduleJob(new Date(ev.time.getTime() - hour), () => { warn(ev, '1 hour', fetcher); }));
   });
-};
+}

@@ -2,6 +2,7 @@ const EventEmitter = require('events');
 const ical = require('ical');
 
 module.exports = {
+  name: "topcoder",
   updateUpcoming: (upcoming) => {
     const emitter = new EventEmitter();
 

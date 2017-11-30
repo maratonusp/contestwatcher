@@ -127,6 +127,7 @@ prelim_contest_end = function(ev, contest_id) {
 }
 
 module.exports = {
+  name: "codeforces",
   updateUpcoming: (upcoming) => {
     const emitter = new EventEmitter();
 
