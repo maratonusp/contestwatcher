@@ -1,9 +1,21 @@
-# Telegram Bot
-If you want to test the telegram bot, you need a token. You can get one from @BotFather. Avoid good bot names, use something like @yourname\_ContestWatcherBot. After getting your token, export it to the environment variable `TELEGRAM_TOKEN`.
+# ContestWatcherBot
+ContestWatcherBot is a Telegram bot that keeps track of all the major online programming contests. It sends you notifications one day and one hour before each event. Try it your self at https://t.me/contestwatcherbot
 
-# Adding Online Judges
-The function `updateUpcoming` exported by `judge/index.js` should update every online judge. Create another file inside the `judge/` directory and call it from there. The fetched contest list should be ordered by time. The function `updateMerge` removes the old entries from the upcoming list and adds the new ones keeping the input order.
+## Judges
+Currently we support the following websites:
+- [AtCoder](https://atcoder.jp/)
+- [Codechef](https://www.codechef.com/)
+- [Codeforces](http://codeforces.com/)
+- [CS Academy](https://csacademy.com/)
+- [TopCoder](https://www.topcoder.com)
 
-# Next Features
-- Enable/Disable some judges per chat via bot
-- Better Alarms
+You can choose which notifications you will receive by enabling/disabling each website. Use `/help` for more information.
+
+## Codeforces integration
+
+Since Codeforces has a very nice [API](http://codeforces.com/api/help) we can keep track not only of the upcoming contests but also of system testing and rating changes. You can add your Codeforces handle to the bot and it will notify you about system testing and rating changes of the contests that you took part. Use `/help_handles` for more information.
+
+## Contributing
+
+We gladly accept contributions! We plan to write better documentation for the code, but if you feel like you can contribute, you are very welcome to do so :-)
+
