@@ -154,9 +154,9 @@ function help_handles(message) {
     "rating changes for contests that some user with handle on " +
     "your handle list is participating.\n\n" +
     "The following commands are for handling your handles:\n" +
-    "/add_handles h1 h2 h3 - add codeforce handles to your handle list\n" +
-    "/rem_handles h1 h2 h3 - remove codeforce handles to your handle list\n" +
-    "/list_handles - list codeforce handles in your handle list\n";
+    "/add_handles h1 h2 h3 - add codeforces handles to your handle list\n" +
+    "/rem_handles h1 h2 h3 - remove codeforces handles to your handle list\n" +
+    "/list_handles - list codeforces handles in your handle list\n";
   Bot.sendMessage(message.chat.id, msg, {});
 }
 
