@@ -15,15 +15,19 @@ const judge = require('./fetch');
 const bot = require('./bot');
 
 // fetcher
-var upcoming = [];
-judge.updateUpcoming(upcoming);
+judge.updateUpcoming();
 
 // Update everyday at 3am
 const rule = new schedule.RecurrenceRule();
 rule.hour = 3;
 rule.minute = 0;
 rule.second = 0;
-schedule.scheduleJob(rule, () => { judge.updateUpcoming(upcoming); });
+schedule.scheduleJob(rule, () => { judge.updateUpcoming(); });
 
-// bot
-bot.create_bot(upcoming, judge);
+// Creating bot
+bot.create_bot();
+// Adding extra message handlers
+fs.readdirSync('./msg_handlers').forEach((file) => {
+  if(file.endsWith('.js'))
+    require('./msg_handlers/' + file).init();
+});
