@@ -3,6 +3,7 @@ const schedule = require('node-schedule');
 const bot = require('../bot');
 const db = require('../db');
 const cfAPI = require('../judgeAPIs/cfAPI');
+const html_msg = require('../html-msg');
 
 const contest_end_handlers = [];
 
