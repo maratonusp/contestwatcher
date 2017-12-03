@@ -2,6 +2,7 @@
 const Bot = require('../bot');
 const db = require('../db');
 const utils = require('../utils');
+const html_msg = require('../html-msg');
 
 const stat = module.exports = {};
 
