@@ -12,7 +12,7 @@ module.exports = {
         ["http://code.jquery.com/jquery.js"],
         (err, window) => {
           if (err) {
-            logger.error("Failed on CodeChef.");
+            logger.error("Failed on CodeChef.", err);
             return;
           }
           const $ = window.$
@@ -25,6 +25,8 @@ module.exports = {
               const _end = moment.tz(contest.filter('.end_date').text(), 'DD MMM YYYY HH:mm:ss', 'Asia/Colombo');
               if (!_start.isValid() || !_end.isValid()) {
                 logger.error('Codechef invalid dates for ' + x.text);
+                logger.error("\t Start: " + _start);
+                logger.error("\t End: " + _end);
                 return;
               }
               const start = _start.toDate();
