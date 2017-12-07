@@ -1,6 +1,7 @@
 /* Commands regarding dealing with individual judges */
 const Bot = require('../bot');
 const db = require('../db');
+const logger = require('../logger');
 const html_msg = require('../html-msg');
 
 const judges = module.exports = {};
@@ -27,7 +28,7 @@ judges.init = function() {
           .unset('ignore.' + judge)
           .write();
         response = "Ok! Now this judge no longer ignored for you!";
-        console.log("Enable " + judge + " on " + message.chat.id);
+        logger.info("Enable " + judge + " on " + message.chat.id);
       } else {
         response = "You are not ignoring this judge.";
       }
@@ -55,7 +56,7 @@ judges.init = function() {
           .set('ignore.' + judge, true)
           .write();
         response = "Ok! Now this judge is now ignored for you!";
-        console.log("Disable " + judge + " on " + message.chat.id);
+        logger.info("Disable " + judge + " on " + message.chat.id);
       } else {
         response = "You are already ignoring this judge.";
       }

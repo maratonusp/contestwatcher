@@ -1,4 +1,5 @@
 const alerts = require('./alerts');
+const logger = require('./logger');
 
 /* TODO: get this list automatically */
 const fetchers_list = ['codeforces', 'codechef', 'topcoder', 'csacademy', 'atcoder', 'calendar'];
@@ -17,7 +18,7 @@ fetch.updateUpcoming = function() {
   fetchers.map((fetcher) => {
     let contests = [];
     fetcher.updateUpcoming(contests).on('end', () => {
-      console.log('merging ' + fetcher.name + ' (found: ' + contests.length + ')');
+      logger.info('merging ' + fetcher.name + ' (found: ' + contests.length + ')');
       if(contests.length > 0) {
         upcoming.push.apply(upcoming, contests);
         alerts.add_alerts(contests, fetcher);

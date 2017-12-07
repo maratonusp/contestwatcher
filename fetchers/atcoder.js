@@ -1,5 +1,6 @@
 const jsdom = require('jsdom')
 const EventEmitter = require('events');
+const logger = require('../logger');
 const moment = require('moment-timezone');
 
 function isNumeric(string) {
@@ -25,7 +26,7 @@ module.exports = {
         ["http://code.jquery.com/jquery.js"],
         (err, window) => {
           if (err) {
-            console.log("Failed on AtCoder.");
+            logger.error("Failed on AtCoder.");
             return;
           }
           upcoming.length = 0;
@@ -45,9 +46,9 @@ module.exports = {
               const duration = row.eq(2).text().split(':'); /* HH:mm */
               const url = row.eq(1).find('a').attr('href');
               if(!start.isValid() || !valid(duration)) {
-                console.log("AtCoder invalid dates for " + name);
-                console.log("\t Start: " + start);
-                console.log("\t Duration: " + duration);
+                logger.error("AtCoder invalid dates for " + name);
+                logger.error("\t Start: " + start);
+                logger.error("\t Duration: " + duration);
                 return;
               }
               upcoming.push({

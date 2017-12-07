@@ -28,7 +28,8 @@ const logger = new winston.Logger({
           (options.message ? options.message : '') +
           (options.meta && Object.keys(options.meta).length ? '\n\t'+ JSON.stringify(options.meta) : '');
       }
-    })
+    }),
+    new (winston.transports.File)({ filename: 'run.log', json: false })
   ]
 });
 

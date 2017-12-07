@@ -4,6 +4,7 @@ const bot = require('../bot');
 const db = require('../db');
 const cfAPI = require('../judgeAPIs/cfAPI');
 const html_msg = require('../html-msg');
+const logger = require('../logger');
 
 const contest_end_handlers = [];
 
@@ -103,12 +104,12 @@ prelim_contest_end = function(ev, contest_id) {
     .map('cf_handles')
     .value()
     .forEach((hs) => { if(hs) hs.forEach((h) => user_handles.add(h)); });
-  console.log("Total handle count: " + user_handles.size);
+  logger.info("Total handle count: " + user_handles.size);
   cfAPI.call_cf_api('contest.standings', {contestId: contest_id, showUnofficial: true}, 2)
     .on('end', (obj) => {
       const handles_in_contest = new Set();
       obj.rows.forEach((row) => row.party.members.forEach((m) => { if(user_handles.has(m.handle)) handles_in_contest.add(m.handle); }));
-      console.log("CF contest " + ev.name + " has " + handles_in_contest.size + " participants.");
+      logger.info("CF contest " + ev.name + " has " + handles_in_contest.size + " participants.");
       if(handles_in_contest.size === 0) return;
       in_contest_handles = Array.from(handles_in_contest);
 
@@ -119,7 +120,7 @@ prelim_contest_end = function(ev, contest_id) {
           if(user.cf_handles)
             user.cf_handles.forEach((h) => { if(handles_in_contest.has(h)) in_contest_ids.add(user.id); });
         });
-      console.log("CF contest " + ev.name + " has participants from " + in_contest_ids.size + " chats.");
+      logger.info("CF contest " + ev.name + " has participants from " + in_contest_ids.size + " chats.");
 
       cfAPI.wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
         /* condition */ (obj) => obj.contest.phase !== 'BEFORE' && obj.contest.phase !== 'CODING',
@@ -158,7 +159,7 @@ module.exports = {
 
         emitter.emit('end');
       } catch (e) {
-        console.log('Parse Failed Codeforces\n' + e.message);
+        logger.error('Parse Failed Codeforces\n' + e.message);
       }
     });
 
