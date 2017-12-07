@@ -3,6 +3,7 @@ const EventEmitter = require('events');
 const cfAPI = require('../judgeAPIs/cfAPI');
 const Bot = require('../bot');
 const db = require('../db');
+const logger = require('../logger');
 const html_msg = require('../html-msg');
 
 const cf = module.exports = {};
@@ -53,7 +54,7 @@ function add_handles(message) {
     emitter.emit('end', "No new handles to add.");
   else {
     if (allHandles.length > 100) {
-      console.log('User ' + message.chat.id + ' tried to add more than 100 handles.');
+      logger.warn('User ' + message.chat.id + ' tried to add more than 100 handles.');
       emitter.emit('end', "I'm not about to do that.");
     } else {
       const handles_set = new Set(allHandles);

@@ -1,7 +1,8 @@
 const lowdb = require('lowdb');
 const low = lowdb('db.json', {
   storage: require('lowdb/lib/storages/file-async')
-})
+});
+const logger = require('./logger');
 
 module.exports = {low: low};
 
@@ -11,7 +12,7 @@ module.exports.user = (function () {
   low.defaults({users: []}).write();
 
   User.create = function (id) {
-    console.log('Creating user ' + id);
+    logger.info('Creating user ' + id);
     low.get('users')
       .push({
         id: id,

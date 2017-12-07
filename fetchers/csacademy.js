@@ -1,5 +1,6 @@
 const https = require('https');
 const EventEmitter = require('events');
+const logger = require('../logger');
 
 module.exports = {
   name: "csacademy",
@@ -22,7 +23,7 @@ module.exports = {
       }
 
       if (error) {
-        console.log(error.message);
+        logger.error(error.message);
         res.resume(); // free
         return;
       }
@@ -57,11 +58,11 @@ module.exports = {
 
           emitter.emit('end');
         } catch (e) {
-          console.log('Parse Failed CSAcademy\n' + e.message);
+          logger.error('Parse Failed CSAcademy\n' + e.message);
         }
       });
     }).on('error', (e) => {
-      console.log('Request Error CSAcademy\n' + e.message);
+      logger.error('Request Error CSAcademy\n' + e.message);
     });
 
     return emitter;

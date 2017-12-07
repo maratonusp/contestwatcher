@@ -2,6 +2,7 @@ const schedule = require('node-schedule');
 const bot = require('./bot');
 const db = require('./db');
 const html_msg = require('./html-msg');
+const logger = require('./logger')
 
 let event_handlers = []
 
@@ -33,7 +34,7 @@ warn = function (ev, left, fetcher) {
 };
 
 alerts.reset_alerts = () => {
-  console.log("Erasing all alerts for upcoming events");
+  logger.info("Erasing all alerts for upcoming events");
   event_handlers.forEach((handler) => { 
     if(handler) handler.cancel(); 
   });
@@ -41,7 +42,7 @@ alerts.reset_alerts = () => {
 };
 
 alerts.add_alerts = (upcoming, fetcher) => {
-  console.log("Registering " + upcoming.length + " " + fetcher.name + " events");
+  logger.info("Registering " + upcoming.length + " " + fetcher.name + " events");
   upcoming.forEach((ev) => {
     event_handlers.push(schedule.scheduleJob(new Date(ev.time.getTime() - day), () => { warn(ev, '1 day', fetcher); }));
     event_handlers.push(schedule.scheduleJob(new Date(ev.time.getTime() - hour), () => { warn(ev, '1 hour', fetcher); }));

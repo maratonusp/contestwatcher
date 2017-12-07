@@ -1,8 +1,9 @@
+const logger = require('../logger');
 /* Sending data to botanio */
 const botan = require('botanio')(process.env.BOTANIO_TOKEN);
 const using_botanio = (process.env.BOTANIO_TOKEN !== undefined);
 const Bot = require('../bot');
-console.log("Using botan.io: " + using_botanio);
+logger.info("Using botan.io: " + using_botanio);
 
 const botanio = module.exports = {};
 
@@ -13,7 +14,7 @@ botanio.init = function() {
       const command = message.text.match(/^\/(\w+)/)[1];
       botan.track(message, command, (err, res, body) => {
         if(err)
-          console.log("Botan.io error: " + err);
+          logger.error("Botan.io error: " + err);
       });
     });
   }

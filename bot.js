@@ -2,6 +2,7 @@ const BotAPI = require('node-telegram-bot-api');
 const process = require('process');
 const html_msg = require('./html-msg');
 const utils = require('./utils');
+const logger = require('./logger');
 
 const db = require('./db');
 
@@ -38,9 +39,9 @@ Bot.create_bot = function() {
 Bot.sendMessage = function(chatId, text, options) {
   let promise = Bot.bot.sendMessage(chatId, text, options);
   promise.catch((error) => {
-    console.log("Error while sending message: " + error.code + "\n" + JSON.stringify(error.response.body));
-    console.log("Original message: " + text);
-    console.log("Options: " + JSON.stringify(options));
+    logger.error("Error while sending message: " + error.code + "\n" + JSON.stringify(error.response.body));
+    logger.error("Original message: " + text);
+    logger.error("Options: " + JSON.stringify(options));
     const err = error.response.body.error_code;
     // if the bot has been "banned" by this chat
     if (err === 400 || err === 403)
