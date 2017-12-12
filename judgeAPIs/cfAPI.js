@@ -58,7 +58,7 @@ cf_api.call_cf_api = function(name, args, retry_times) {
   return emitter;
 }
 
-/* Calls cf api function 'name' every 30 seconds until condition is satisfied, and then calls callback. Tries at most for a day, if it is not satisfied, then it gives up. */
+/* Calls cf api function 'name' every 30 seconds until condition is satisfied, and then calls callback. Tries at most for 3 days, if it is not satisfied, then it gives up. */
 cf_api.wait_for_condition_on_api_call = function(name, args, condition, callback) {
   const emitter = new EventEmitter();
   let count_calls = 0;
@@ -68,10 +68,10 @@ cf_api.wait_for_condition_on_api_call = function(name, args, condition, callback
         if (condition(obj)) {
           handle.cancel();
           callback(obj);
-        } else if (count_calls++ > 2 * 60 * 24) // 1 day
+        } else if (count_calls++ > 2 * 60 * 24 * 3) // 3 days
           handle.cancel();
       }).on('error', () => {
-        if (count_calls++ > 2 * 60 * 24) // 1 day
+        if (count_calls++ > 2 * 60 * 24 * 3) // 3 days
           handle.cancel()
       });
   });

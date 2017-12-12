@@ -34,15 +34,11 @@ simple_msg_all = function(msg) {
   schedule.scheduleJob(in15s, () => flush_cf_msgs(cf_simple_buffer, null));
 }
 
-const in_contest_ids = new Set();
-var in_contest_handles = [];
+const in_contest_ids = {};
 
-/* Schedules msg to all users in current contest. (tries to group messages together) */
-const cf_contest_buffer = [];
-contest_msg_all = function(msg) {
-  cf_contest_buffer.push(msg);
-  let in15s = new Date(Date.now() + 15 * 1000);
-  schedule.scheduleJob(in15s, () => flush_cf_msgs(cf_contest_buffer, (user) => !in_contest_ids.has(user.id)));
+/* Msgs all users in a contest */
+contest_msg_all = function(msg, contest_id) {
+  flush_cf_msgs([msg], (user) => !in_contest_ids[contest_id].has(user.id));
 }
 
 /* Called when ratings are changed */
@@ -51,7 +47,7 @@ process_final = function(ratings, ev, contest_id) {
   ratings.forEach((r) => mp.set(r.handle, r));
   db.low
     .get('users')
-    .reject((user) => { return !user.notify || user.ignore["codeforces"] || !in_contest_ids.has(user.id); })
+    .reject((user) => { return !user.notify || user.ignore["codeforces"] || !in_contest_ids[contest_id].has(user.id); })
     .value()
     .forEach((user) => {
       let msg = 'Ratings for ' + html_msg.make_link(ev.name, ev.url) + ' are out!';
@@ -60,6 +56,8 @@ process_final = function(ratings, ev, contest_id) {
         if(mp.has(h))
           rs.push(mp.get(h));
       });
+      if(rs.length === 0)
+        return
       rs.sort((a, b) => a.rank - b.rank);
       rs.forEach((r) => {
         let prefix = "";
@@ -72,7 +70,7 @@ process_final = function(ratings, ev, contest_id) {
 
 /* Called when system testing ends, checks for rating changes */
 process_ratings = function(ev, contest_id) {
-  contest_msg_all('System testing has finished for ' + html_msg.make_link(ev.name, ev.url) + '. Waiting for rating changes.');
+  contest_msg_all('System testing has finished for ' + html_msg.make_link(ev.name, ev.url) + '. Waiting for rating changes.', contest_id);
   cfAPI.wait_for_condition_on_api_call('contest.ratingChanges', {contestId: contest_id},
     /* condition */ (obj) => obj.length > 0,
     /* callback */  (obj) => process_final(obj, ev, contest_id));
@@ -80,7 +78,7 @@ process_ratings = function(ev, contest_id) {
 
 /* Called when system testing starts, checks for end of system testing */
 process_systest = function(ev, contest_id) {
-  contest_msg_all('System testing has started for ' + html_msg.make_link(ev.name, ev.url) + '.');
+  contest_msg_all('System testing has started for ' + html_msg.make_link(ev.name, ev.url) + '.', contest_id);
   cfAPI.wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
     /* condition */ (obj) => obj.contest.phase == 'FINISHED',
     /* callback */  () => process_ratings(ev, contest_id));
@@ -88,7 +86,7 @@ process_systest = function(ev, contest_id) {
 
 /* Called when contest ends, checks for start of system testing */
 process_contest_end = function(ev, contest_id) {
-  contest_msg_all(html_msg.make_link(ev.name, ev.url) + ' has just ended. Waiting for system testing.');
+  contest_msg_all(html_msg.make_link(ev.name, ev.url) + ' has just ended. Waiting for system testing.', contest_id);
   cfAPI.wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
     /* condition */ (obj) => obj.contest.phase == 'SYSTEM_TEST' || obj.contest.phase == 'FINISHED',
     /* callback */  () => process_systest(ev, contest_id));
@@ -96,8 +94,12 @@ process_contest_end = function(ev, contest_id) {
 
 /* Checks if contest really ended (was not extended) and collects participating handles. */
 prelim_contest_end = function(ev, contest_id) {
-  in_contest_ids.clear();
-  in_contest_handles.length = 0;
+  in_contest_ids[contest_id] = new Set();
+
+  /* Deletes this info after 5 days */
+  let in5d = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+  schedule.scheduleJob(in5d, () => delete in_contest_ids[contest_id] );
+
   const user_handles = new Set();
   db.low
     .get('users')
@@ -105,22 +107,20 @@ prelim_contest_end = function(ev, contest_id) {
     .value()
     .forEach((hs) => { if(hs) hs.forEach((h) => user_handles.add(h)); });
   logger.info("Total handle count: " + user_handles.size);
-  cfAPI.call_cf_api('contest.standings', {contestId: contest_id, showUnofficial: true}, 2)
+  cfAPI.call_cf_api('contest.standings', {contestId: contest_id, showUnofficial: true}, 5)
     .on('end', (obj) => {
       const handles_in_contest = new Set();
       obj.rows.forEach((row) => row.party.members.forEach((m) => { if(user_handles.has(m.handle)) handles_in_contest.add(m.handle); }));
       logger.info("CF contest " + ev.name + " has " + handles_in_contest.size + " participants.");
       if(handles_in_contest.size === 0) return;
-      in_contest_handles = Array.from(handles_in_contest);
 
       db.low
         .get('users')
         .value()
         .forEach((user) => {
-          if(user.cf_handles)
-            user.cf_handles.forEach((h) => { if(handles_in_contest.has(h)) in_contest_ids.add(user.id); });
+          user.cf_handles.forEach((h) => { if(handles_in_contest.has(h)) in_contest_ids[contest_id].add(user.id); });
         });
-      logger.info("CF contest " + ev.name + " has participants from " + in_contest_ids.size + " chats.");
+      logger.info("CF contest " + ev.name + " has participants from " + in_contest_ids[contest_id].size + " chats.");
 
       cfAPI.wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
         /* condition */ (obj) => obj.contest.phase !== 'BEFORE' && obj.contest.phase !== 'CODING',
