@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Watches online judges for contests",
   "main": "index.js",
-  "repository": "victorsenam/contestwatcher",
+  "repository": "maratonime/contestwatcher",
   "devDependencies": {},
   "engines": {
     "node": ">= 6.0.0"
