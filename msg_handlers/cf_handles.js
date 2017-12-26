@@ -41,15 +41,19 @@ function add_handles(message) {
     });
   });
 
-  const user_cur = new Set(user.get('cf_handles').value());
+  // Use lowercase handles for comparison
+  const user_cur = new Set(user.get('cf_handles').value().map(x => x.toLowerCase()));
   const allHandles =
     Array.from(new Set(
       message.text.slice(message.text.indexOf(' ') + 1)
+      .toLowerCase()
       .trim().split(' ')))
       .map((h) => h.trim()).
       filter((h) => h.length > 0 && !user_cur.has(h));
+
   if(!user.has('cf_handles').value())
     user.set('cf_handles', []).write();
+
   if(allHandles.length === 0)
     emitter.emit('end', "No new handles to add.");
   else {
@@ -57,23 +61,27 @@ function add_handles(message) {
       logger.warn('User ' + message.chat.id + ' tried to add more than 100 handles.');
       emitter.emit('end', "I'm not about to do that.");
     } else {
-      const handles_set = new Set(allHandles);
+      const handles_set = new Set();
+
       cfAPI.call_cf_api('user.info', {handles: allHandles.join(';')}, 1).on('error', () => {
         var wrong_handles = []
         var handlesToAdd = allHandles.length
         emitter.on('check', (handle) => {
           cfAPI.call_cf_api('user.info', {handles: handle}, 2).on('error', () => {
             wrong_handles.push(handle);
-            handles_set.delete(handle)
             if (--handlesToAdd == 0) emitter.emit('add', handles_set, wrong_handles);
-          }).on('end', () => {
+          }).on('end', (data) => {
+            // Adds handle with correct case
+            handles_set.add(data[0]['handle'])
             if (--handlesToAdd == 0) emitter.emit('add', handles_set, wrong_handles);
           });
         });
         for (var i in allHandles) {
           emitter.emit('check', allHandles[i]);
         }
-      }).on('end', () => {
+      }).on('end', (data) => {
+        // Adds all handles with correct case
+        data.forEach(u => handles_set.add(u['handle']));
         emitter.emit('add', handles_set, [])
       })
     }
@@ -98,10 +106,10 @@ function rem_handles(message) {
     msg = "No handles to remove.";
   else {
     const user = db.user.get(message.chat.id);
-    const hs = new Set(message.text.slice(message.text.indexOf(' ') + 1).split(' '))
+    const hs = new Set(message.text.slice(message.text.indexOf(' ') + 1).toLowerCase().split(' '))
     if(!user.has('cf_handles').value())
       user.set('cf_handles', []).write();
-    user.get('cf_handles').remove((h) => hs.has(h)).write();
+    user.get('cf_handles').remove((h) => hs.has(h.toLowerCase())).write();
     msg = "Handles removed successfully :)";
   }
   Bot.sendMessage(message.chat.id, msg, {});
