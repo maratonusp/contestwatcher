@@ -73,7 +73,12 @@ process_ratings = function(ev, contest_id) {
   contest_msg_all('System testing has finished for ' + html_msg.make_link(ev.name, ev.url) + '. Waiting for rating changes.', contest_id);
   cfAPI.wait_for_condition_on_api_call('contest.ratingChanges', {contestId: contest_id},
     /* condition */ (obj) => obj.length > 0,
-    /* callback */  (obj) => process_final(obj, ev, contest_id));
+    /* callback */  (obj) => {
+        let in30s = new Date(Date.now() + 30 * 1000);
+        schedule.scheduleJob(in30s, () =>
+          cfAPI.call_cf_api('contest.ratingChanges', {contestId: contest_id}, 4)
+          .on('end', (obj) => process_final(obj, ev, contest_id)));
+    });
 }
 
 /* Called when system testing starts, checks for end of system testing */
