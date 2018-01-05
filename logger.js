@@ -1,4 +1,4 @@
-const winston = require("winston");
+var winston = require("winston");
 const dateFormat = require('dateformat');
 
 /**
@@ -25,21 +25,27 @@ function getFormatter(options) {
     (options.meta && Object.keys(options.meta).length ? '\n'+ JSON.stringify(options.meta) : '');
 }
 
-const logger = new winston.Logger({
+var logger = new winston.Logger({
   transports: [
-    new winston.transports.Console({
-      level: "debug",
-      handleExceptions: true,
+    new (winston.transports.Console)({
+      level: 'debug',
       json: false,
       colorize: true,
-      formatter: getFormatter
+      formatter: getFormatter,
+      handleExceptions: false
     }),
     new (winston.transports.File)({
-      filename: 'run.log', 
+      level: 'debug',
+      filename: './run.log',
       json: false,
       colorize: false,
-      formatter: getFormatter
-    })
+      formatter: getFormatter,
+      handleExceptions: true,
+      maxsize: 100000, // 100 KB
+      maxFiles: 5,
+      tailable: true,
+      zippedArchive: true
+    }),
   ]
 });
 

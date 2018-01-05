@@ -7,3 +7,4 @@ db.json
 npm-debug.log
 run.log
 .idea
+*.gz
