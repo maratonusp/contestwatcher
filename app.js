@@ -21,6 +21,6 @@ schedule.scheduleJob(rule, () => { judge.updateUpcoming(); });
 bot.create_bot();
 // Adding extra message handlers
 fs.readdirSync('./msg_handlers').forEach((file) => {
-  if(file.endsWith('.js'))
-    require('./msg_handlers/' + file).init();
+	if(file.endsWith('.js'))
+		require('./msg_handlers/' + file).init();
 });
