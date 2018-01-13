@@ -1,11 +1,12 @@
-const alerts = require('./alerts');
 const logger = require('./logger');
+const alerts = require('./alerts');
+const fs = require('fs');
+const schedule = require('node-schedule');
 
-/* TODO: get this list automatically */
-const fetchers_list = ['codeforces', 'codechef', 'topcoder', 'csacademy', 'atcoder', 'calendar'];
-const fetchers = fetchers_list.map((name) => {
-	return require('./fetchers/' + name);
-});
+// Getting every available fetcher
+const fetchers = fs.readdirSync('./fetchers')
+  .filter((file) => { return file.endsWith('.js'); })
+	.map((file) => { return require('./fetchers/' + file); });
 
 const fetch = module.exports = {};
 
@@ -15,15 +16,23 @@ fetch.updateUpcoming = function() {
 	const upcoming = fetch.upcoming;
 	upcoming.length = 0;
 	alerts.reset_alerts();
-	fetchers.map((fetcher) => {
+	
+	fetchers.forEach((fetcher) => {
 		let contests = [];
 		fetcher.updateUpcoming(contests).on('end', () => {
 			logger.info('merging ' + fetcher.name + ' (found: ' + contests.length + ')');
 			if(contests.length > 0) {
-				upcoming.push.apply(upcoming, contests);
 				alerts.add_alerts(contests, fetcher);
+
+				upcoming.push.apply(upcoming, contests);
 				upcoming.sort((a, b) => { return a.time - b.time; });
 			}
 		});
 	});
+}
+
+fetch.init = function () {
+	// Makes initial fetch and schedules one for 3am everyday
+	fetch.updateUpcoming();
+	schedule.scheduleJob({ hour: 3, minute: 0, second: 0}, () => { judge.updateUpcoming(); });
 }
