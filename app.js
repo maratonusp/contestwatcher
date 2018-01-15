@@ -2,6 +2,9 @@
 // Sets exception handlers
 const logger = require('./logger');
 
+// Evolves the database
+require('./db_evolution').evolve();
+
 // Initializes online judge fetchers
 const fetch = require('./fetch').init();
 

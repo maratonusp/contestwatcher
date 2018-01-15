@@ -51,9 +51,6 @@ function add_handles(message) {
 		.map((h) => h.trim()).
 		filter((h) => h.length > 0 && !user_cur.has(h));
 
-	if(!user.has('cf_handles').value())
-		user.set('cf_handles', []).write();
-
 	if(allHandles.length === 0)
 		emitter.emit('end', "No new handles to add.");
 	else {
