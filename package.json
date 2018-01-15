@@ -4,12 +4,16 @@
   "description": "Watches online judges for contests",
   "main": "index.js",
   "repository": "maratonime/contestwatcher",
-  "devDependencies": {},
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "rewire": "^3.0.2",
+    "sinon": "^4.1.5"
+  },
   "engines": {
     "node": ">= 6.0.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha tests --recursive",
     "start": "node app.js"
   },
   "keywords": [
