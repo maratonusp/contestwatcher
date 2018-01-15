@@ -44,7 +44,7 @@ contest_msg_all = function(msg, contest_id) {
 /* Called when ratings are changed */
 process_final = function(ratings, ev, contest_id) {
 	const mp = new Map();
-	ratings.forEach((r) => mp.set(r.handle, r));
+	ratings.forEach((r) => mp.set(r.handle.toLowerCase(), r));
 	db.low
 		.get('users')
 		.reject((user) => { return !user.notify || user.ignore["codeforces"] || !in_contest_ids[contest_id].has(user.id); })
