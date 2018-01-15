@@ -7,33 +7,6 @@ const cfAPI = require('../judgeAPIs/cfAPI');
 const html_msg = require('../html-msg');
 
 const contest_end_handlers = [];
-
-flush_cf_msgs = function(buffer, rejectExtra) {
-	if(buffer.length === 0)
-		return;
-	let msg = buffer.join('\n');
-	buffer.length = 0;
-	db.low
-		.get('users')
-		.reject((user) => { return !user.notify || user.ignore["codeforces"] || (rejectExtra && rejectExtra(user)); })
-		.map('id')
-		.value()
-		.forEach((id) => {
-			bot.sendMessage(id, msg, {
-				parse_mode: 'html',
-				disable_web_page_preview: true
-			});
-		});
-}
-
-/* Schedules msg to all users that receive codeforces notifications. (tries to group messages together) */
-const cf_simple_buffer = [];
-simple_msg_all = function(msg) {
-	cf_simple_buffer.push(msg);
-	let in15s = new Date(Date.now() + 15 * 1000);
-	schedule.scheduleJob(in15s, () => flush_cf_msgs(cf_simple_buffer, null));
-}
-
 const in_contest_ids = {};
 
 /* Msgs all users in a contest */
@@ -169,6 +142,5 @@ module.exports = {
 		});
 
 		return emitter;
-	},
-	announceContest: (ev, left) => { simple_msg_all(html_msg.make_link(ev.name, ev.url) + html_msg.escape(' will start in ' + left + '.')); }
+	}
 };

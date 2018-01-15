@@ -13,26 +13,44 @@ const day = 24 * hour;
 
 const alerts = module.exports = {}
 
-warn = function (ev, left, fetcher) {
-	var message = html_msg.make_link(ev.name, ev.url) + html_msg.escape(' will start in ' + left + '.');
-	if(fetcher.announceContest !== undefined)
-		fetcher.announceContest(ev, left);
-	else // default behavior
+/* Manages contest warning messages */
+const warning_manager = (function () {
+	var instance = {};
+
+	instance.buffer = [];
+
+	instance.flush_buffer = function () {
 		db.low
 			.get('users')
-			.reject(function(user) {
-				return !user.notify || user.ignore[ev.judge]
-			})
-			.map('id')
 			.value()
-			.forEach(function (id) {
-				bot.sendMessage(id, message, {
-					parse_mode: 'html',
-					disable_web_page_preview: true
-				});
-			});
-};
+			.forEach(function (user) {
+				if (!user.notify) return;
 
+				var message = instance.buffer.reduce((message, warning) => {
+					var ev = warning.ev;
+					if (!user.ignore[ev.judge])
+						message += html_msg.make_link(ev.name, ev.url) + html_msg.escape(' will start in ' + warning.left + '.') + '\n';
+					return message;
+				}, "");
+				
+				if (message !== "")
+					bot.sendMessage(user.id, message, { parse_mode: 'htmt', disable_web_page_preview: true });
+			});
+		instance.buffer = [];
+	};
+
+	// dummy flush 300000 days from now, never called
+	instance.next_flush = new schedule.scheduleJob(new Date(Date.now() + 300000 * day), instance.flush_buffer);
+	instance.next_flush.cancel();
+
+	instance.add = function(ev, left) {
+		instance.buffer.push({ ev: ev, left: left });
+		instance.next_flush.reschedule(new Date(Date.now() + 30 * 1000));
+	}
+
+	return instance;
+}());
+	
 alerts.reset_alerts = () => {
 	logger.info("Erasing all alerts for upcoming events");
 	event_handlers.forEach((handler) => { 
@@ -44,7 +62,7 @@ alerts.reset_alerts = () => {
 alerts.add_alerts = (upcoming, fetcher) => {
 	logger.info("Registering " + upcoming.length + " " + fetcher.name + " events");
 	upcoming.forEach((ev) => {
-		event_handlers.push(schedule.scheduleJob(new Date(ev.time.getTime() - day), () => { warn(ev, '1 day', fetcher); }));
-		event_handlers.push(schedule.scheduleJob(new Date(ev.time.getTime() - hour), () => { warn(ev, '1 hour', fetcher); }));
+		event_handlers.push(schedule.scheduleJob(new Date(ev.time.getTime() - day), () => { warning_manager.add(ev, '1 day', fetcher); }));
+		event_handlers.push(schedule.scheduleJob(new Date(ev.time.getTime() - hour), () => { warning_manager.add(ev, '1 hour', fetcher); }));
 	});
 }
