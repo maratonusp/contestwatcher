@@ -1,6 +1,6 @@
+const logger = require('../logger');
 const https = require('https');
 const EventEmitter = require('events');
-const logger = require('../logger');
 
 module.exports = {
 	name: "csacademy",

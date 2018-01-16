@@ -1,8 +1,8 @@
+const logger = require('../logger');
 const http = require('http');
 const EventEmitter = require('events');
 const schedule = require('node-schedule');
 const qs = require('querystring');
-const logger = require('../logger');
 
 const cf_api = module.exports = {}
 

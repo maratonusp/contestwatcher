@@ -1,4 +1,5 @@
 /* Lists useful stats to admin */
+const logger = require('../logger');
 const Bot = require('../bot');
 const db = require('../db');
 const utils = require('../utils');

@@ -1,5 +1,5 @@
-const logger = require('../logger');
 /* Sending data to botanio */
+const logger = require('../logger');
 const botan = require('botanio')(process.env.BOTANIO_TOKEN);
 const using_botanio = (process.env.BOTANIO_TOKEN !== undefined);
 const Bot = require('../bot');

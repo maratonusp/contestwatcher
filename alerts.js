@@ -1,8 +1,8 @@
+const logger = require('./logger')
 const schedule = require('node-schedule');
 const bot = require('./bot');
 const db = require('./db');
 const html_msg = require('./html-msg');
-const logger = require('./logger')
 
 let event_handlers = []
 

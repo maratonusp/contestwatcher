@@ -31,7 +31,9 @@ winston.add(winston.transports.Console, {
 	level: 'debug',
 	json: false,
 	colorize: true,
-	formatter: getFormatter
+	formatter: getFormatter,
+	handleExceptions: true,
+	humanReadableUnhandledException: true
 });
 
 winston.add(winston.transports.File, {
@@ -43,7 +45,9 @@ winston.add(winston.transports.File, {
 	maxsize: 100000, // 100 KB
 	maxFiles: 5,
 	tailable: true,
-	zippedArchive: true
+	zippedArchive: true,
+	handleExceptions: true,
+	humanReadableUnhandledException: true
 });
 
 module.exports = winston;

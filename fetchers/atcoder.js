@@ -1,6 +1,6 @@
+const logger = require('../logger');
 const jsdom = require('jsdom')
 const EventEmitter = require('events');
-const logger = require('../logger');
 const moment = require('moment-timezone');
 
 function isNumeric(string) {

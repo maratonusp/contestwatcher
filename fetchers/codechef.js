@@ -1,7 +1,7 @@
+const logger = require('../logger');
 const jsdom = require('jsdom')
 const EventEmitter = require('events');
 const moment = require('moment-timezone');
-const logger = require('../logger');
 
 module.exports = {
 	name: "codechef",

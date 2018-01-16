@@ -1,8 +1,8 @@
+const logger = require('./logger');
 const BotAPI = require('node-telegram-bot-api');
 const process = require('process');
 const html_msg = require('./html-msg');
 const utils = require('./utils');
-const logger = require('./logger');
 
 const db = require('./db');
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 // Sets exception handlers
 const logger = require('./logger');
 

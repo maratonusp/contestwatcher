@@ -1,4 +1,5 @@
 /* Commands /start, /stop and /help */
+const logger = require('../logger');
 const Bot = require('../bot');
 const db = require('../db');
 

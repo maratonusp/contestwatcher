@@ -1,3 +1,4 @@
+const logger = require('../logger');
 const EventEmitter = require('events');
 const ical = require('ical');
 

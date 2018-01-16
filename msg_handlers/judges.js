@@ -1,7 +1,7 @@
 /* Commands regarding dealing with individual judges */
+const logger = require('../logger');
 const Bot = require('../bot');
 const db = require('../db');
-const logger = require('../logger');
 const html_msg = require('../html-msg');
 
 const judges = module.exports = {};

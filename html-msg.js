@@ -1,3 +1,4 @@
+const logger = require('./logger');
 const html_escape = require('true-html-escape').escape;
 
 var hm = module.exports = {};

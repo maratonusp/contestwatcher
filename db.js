@@ -1,8 +1,8 @@
+const logger = require('./logger');
 const lowdb = require('lowdb');
 const low = lowdb('db.json', {
 	storage: require('lowdb/lib/storages/file-async')
 });
-const logger = require('./logger');
 
 module.exports = {low: low};
 

@@ -1,9 +1,9 @@
 /* Commands regarding dealing with codeforces handles */
+const logger = require('../logger');
 const EventEmitter = require('events');
 const cfAPI = require('../judgeAPIs/cfAPI');
 const Bot = require('../bot');
 const db = require('../db');
-const logger = require('../logger');
 const html_msg = require('../html-msg');
 
 const cf = module.exports = {};

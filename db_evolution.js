@@ -1,5 +1,5 @@
-const db = require('./db');
 const logger = require('./logger');
+const db = require('./db');
 const version = 1; // Increase the version for evolving
 
 db.low.defaults({ version: 0 }).write();

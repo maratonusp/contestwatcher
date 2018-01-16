@@ -1,4 +1,5 @@
 /* Commands to deal with the list of contests: upcoming, running, etc. */
+const logger = require('../logger');
 const Bot = require('../bot');
 const html_msg = require('../html-msg');
 const fetch = require('../fetch');

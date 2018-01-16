@@ -1,10 +1,10 @@
+const logger = require('../logger');
 const EventEmitter = require('events');
 const schedule = require('node-schedule');
 const bot = require('../bot');
 const db = require('../db');
 const cfAPI = require('../judgeAPIs/cfAPI');
 const html_msg = require('../html-msg');
-const logger = require('../logger');
 
 const contest_end_handlers = [];
 
