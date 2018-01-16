@@ -34,7 +34,7 @@ const warning_manager = (function () {
 				}, "");
 				
 				if (message !== "")
-					bot.sendMessage(user.id, message, { parse_mode: 'htmt', disable_web_page_preview: true });
+					bot.sendSimpleHtml(user.id, message);
 			});
 		instance.buffer = [];
 	};

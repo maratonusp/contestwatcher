@@ -26,12 +26,12 @@ describe('warning_manager.flush_buffer', function () {
 		sinon.stub(db.low, 'get');
 		db.low.get.withArgs('users').returns({ value: function () { return users_sample; } });
 
-		sinon.stub(bot, 'sendMessage');
+		sinon.stub(bot, 'sendSimpleHtml');
 	});
 
 	afterEach(function() {
 		db.low.get.restore();
-		bot.sendMessage.restore();
+		bot.sendSimpleHtml.restore();
 	});
 
 	it("should clear buffer", function () {
@@ -41,19 +41,19 @@ describe('warning_manager.flush_buffer', function () {
 
 	it("should send messages only for insterested users", function () {
 		warning_manager.flush_buffer();
-		expect(bot.sendMessage.calledWith(0)).to.be.true;
-		expect(bot.sendMessage.calledWith(1)).to.be.true;
-		expect(bot.sendMessage.calledWith(2)).to.be.true;
-		expect(bot.sendMessage.calledWith(5)).to.be.false;
-		expect(bot.sendMessage.calledWith(3)).to.be.false;
-		expect(bot.sendMessage.calledWith(4)).to.be.false;
-		expect(bot.sendMessage.callCount).to.eq(3);
+		expect(bot.sendSimpleHtml.calledWith(0)).to.be.true;
+		expect(bot.sendSimpleHtml.calledWith(1)).to.be.true;
+		expect(bot.sendSimpleHtml.calledWith(2)).to.be.true;
+		expect(bot.sendSimpleHtml.calledWith(5)).to.be.false;
+		expect(bot.sendSimpleHtml.calledWith(3)).to.be.false;
+		expect(bot.sendSimpleHtml.calledWith(4)).to.be.false;
+		expect(bot.sendSimpleHtml.callCount).to.eq(3);
 	});
 
 	it("should not inform about ignored judges", function () {
 		warning_manager.flush_buffer();
-		expect(bot.sendMessage.calledWith(4)).to.be.false;
-		expect(bot.sendMessage.calledWithMatch(sinon.match.same(2),sinon.match(/codeforces/))).to.be.false;
+		expect(bot.sendSimpleHtml.calledWith(4)).to.be.false;
+		expect(bot.sendSimpleHtml.calledWithMatch(sinon.match.same(2),sinon.match(/codeforces/))).to.be.false;
 	});
 });
 
