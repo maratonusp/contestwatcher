@@ -32,6 +32,7 @@ cf_api.call_cf_api = function(name, args, retry_times) {
 			res.on('end', () => {
 				let obj;
 				try {
+					logger.info(data.substr(0, 1000));
 					obj = JSON.parse(data);
 					if (obj.status == "FAILED") {
 						if(times > 0) try_(times - 1);
