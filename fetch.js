@@ -34,5 +34,5 @@ fetch.updateUpcoming = function() {
 fetch.init = function () {
 	// Makes initial fetch and schedules one for 3am everyday
 	fetch.updateUpcoming();
-	schedule.scheduleJob({ hour: 3, minute: 0, second: 0}, () => { judge.updateUpcoming(); });
+	schedule.scheduleJob({ hour: 3, minute: 0, second: 0}, () => { fetch.updateUpcoming(); });
 }
