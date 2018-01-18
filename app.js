@@ -2,6 +2,7 @@
 
 // Sets exception handlers
 const logger = require('./logger');
+logger.info("Booting up.");
 
 // Evolves the database
 require('./db_evolution').evolve();
