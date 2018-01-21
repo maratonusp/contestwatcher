@@ -11,7 +11,12 @@ const in_contest_ids = {};
 
 /* Msgs all users in a contest */
 contest_msg_all = function(msg, contest_id) {
-	flush_cf_msgs([msg], (user) => !in_contest_ids[contest_id].has(user.id));
+	db.low
+		.get('users')
+		.reject((user) => { return !user.notify || user.ignore["codeforces"] || !in_contest_ids[contest_id].has(user.id); })
+		.map('id')
+		.value()
+		.forEach((id) => { bot.sendSimpleHtml(id, message) });
 }
 
 /* Called when ratings are changed */
