@@ -1,3 +1,4 @@
+"use strict";
 const logger = require('../logger');
 const EventEmitter = require('events');
 const schedule = require('node-schedule');
@@ -10,22 +11,22 @@ const contest_end_handlers = [];
 const in_contest_ids = {};
 
 /* Msgs all users in a contest */
-contest_msg_all = function(msg, contest_id) {
+let contest_msg_all = function(msg, contest_id) {
 	db.low
 		.get('users')
-		.reject((user) => { return !user.notify || user.ignore["codeforces"] || !in_contest_ids[contest_id].has(user.id); })
+		.reject((user) => { return !user.notify || user.ignore.codeforces || !in_contest_ids[contest_id].has(user.id); })
 		.map('id')
 		.value()
-		.forEach((id) => { bot.sendSimpleHtml(id, message) });
-}
+		.forEach((id) => { bot.sendSimpleHtml(id, msg); });
+};
 
 /* Called when ratings are changed */
-process_final = function(ratings, ev, contest_id) {
+let process_final = function(ratings, ev, contest_id) {
 	const mp = new Map();
 	ratings.forEach((r) => mp.set(r.handle.toLowerCase(), r));
 	db.low
 		.get('users')
-		.reject((user) => { return !user.notify || user.ignore["codeforces"] || !in_contest_ids[contest_id].has(user.id); })
+		.reject((user) => { return !user.notify || user.ignore.codeforces || !in_contest_ids[contest_id].has(user.id); })
 		.value()
 		.forEach((user) => {
 			let msg = 'Ratings for ' + html_msg.make_link(ev.name, ev.url) + ' are out!';
@@ -35,7 +36,7 @@ process_final = function(ratings, ev, contest_id) {
 					rs.push(mp.get(h));
 			});
 			if(rs.length === 0)
-				return
+				return;
 			rs.sort((a, b) => a.rank - b.rank);
 			rs.forEach((r) => {
 				let prefix = "";
@@ -44,39 +45,39 @@ process_final = function(ratings, ev, contest_id) {
 			});
 			bot.sendMessage(user.id, msg, { parse_mode: 'html', disable_web_page_preview: true });
 		});
-}
+};
 
 /* Called when system testing ends, checks for rating changes */
-process_ratings = function(ev, contest_id) {
+let process_ratings = function(ev, contest_id) {
 	contest_msg_all('System testing has finished for ' + html_msg.make_link(ev.name, ev.url) + '. Waiting for rating changes.', contest_id);
 	cfAPI.wait_for_condition_on_api_call('contest.ratingChanges', {contestId: contest_id},
 		/* condition */ (obj) => obj.length > 0,
-		/* callback */  (obj) => {
+		/* callback */  () => {
 			let in30s = new Date(Date.now() + 30 * 1000);
 			schedule.scheduleJob(in30s, () =>
 				cfAPI.call_cf_api('contest.ratingChanges', {contestId: contest_id}, 4)
 				.on('end', (obj) => process_final(obj, ev, contest_id)));
 		});
-}
+};
 
 /* Called when system testing starts, checks for end of system testing */
-process_systest = function(ev, contest_id) {
+let process_systest = function(ev, contest_id) {
 	contest_msg_all('System testing has started for ' + html_msg.make_link(ev.name, ev.url) + '.', contest_id);
 	cfAPI.wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
-		/* condition */ (obj) => obj.contest.phase == 'FINISHED',
+		/* condition */ (obj) => obj.contest.phase === 'FINISHED',
 		/* callback */  () => process_ratings(ev, contest_id));
-}
+};
 
 /* Called when contest ends, checks for start of system testing */
-process_contest_end = function(ev, contest_id) {
+let process_contest_end = function(ev, contest_id) {
 	contest_msg_all(html_msg.make_link(ev.name, ev.url) + ' has just ended. Waiting for system testing.', contest_id);
 	cfAPI.wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
-		/* condition */ (obj) => obj.contest.phase == 'SYSTEM_TEST' || obj.contest.phase == 'FINISHED',
+		/* condition */ (obj) => obj.contest.phase === 'SYSTEM_TEST' || obj.contest.phase === 'FINISHED',
 		/* callback */  () => process_systest(ev, contest_id));
-}
+};
 
 /* Checks if contest really ended (was not extended) and collects participating handles. */
-prelim_contest_end = function(ev, contest_id) {
+let prelim_contest_end = function(ev, contest_id) {
 	in_contest_ids[contest_id] = new Set();
 
 	/* Deletes this info after 5 days */
@@ -109,7 +110,7 @@ prelim_contest_end = function(ev, contest_id) {
 				/* condition */ (obj) => obj.contest.phase !== 'BEFORE' && obj.contest.phase !== 'CODING',
 				/* callback */  () => process_contest_end(ev, contest_id));
 		});
-}
+};
 
 module.exports = {
 	name: "codeforces",
