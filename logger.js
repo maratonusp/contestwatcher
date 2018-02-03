@@ -20,13 +20,6 @@ function getFormatter(options) {
 	level = options.level.toUpperCase();
 	if (options.colorize)
 		level = winston.config.colorize(options.level, level)
-
-	if (options.meta.trace) {
-		options.message += '\n' + options.meta.stack.join('\n');
-		delete options.meta.trace;
-		delete options.meta.stack;
-	}
-
 	return date + ' ' + level + ': ' +
 		(options.message ? options.message : '') +
 		(options.meta && Object.keys(options.meta).length ? '\n'+ JSON.stringify(options.meta) : '');
