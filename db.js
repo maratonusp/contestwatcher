@@ -36,6 +36,14 @@ module.exports.user = (function () {
 			return module.exports.user.create(id);
 		return user;
 	}
+	
+	User.migrate = function (old_id, new_id) {
+		logger.info('Migrating user ' + old_id + ' to ' + new_id);
+		var user = User
+			.get(old_id)
+			.assign({id : new_id})
+			.write();
+	}
 
 	return User;
 })();
