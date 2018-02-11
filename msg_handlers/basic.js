@@ -8,6 +8,9 @@ const start_stop = module.exports = {};
 start_stop.init = function() {
 
 	Bot.bot.on('message', (msg) => {
+		// update database when chat migrates
+		if (msg.migrate_from_chat_id !== undefined)
+			db.user.migrate(msg.migrate_from_chat_id, msg.chat.id);
 		// mark last activity
 		db.user.get(msg.chat.id).set('last_activity', Date.now()).write();
 	});
