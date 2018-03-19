@@ -32,6 +32,7 @@ broadcast.init = function() {
 		last_broadcast = {};
 		db.low
 			.get('users')
+			.filter({notify: true})
 			.map('id')
 			.value()
 			.forEach((id) => {
@@ -40,6 +41,15 @@ broadcast.init = function() {
 					disable_web_page_preview: true
 				}).then((msg) => {
 					last_broadcast[id] = msg.message_id;
+				}, (error) => {
+					// Changing notify to false when bot is blocked or kicked from a group
+					if (error.body.err_code == 403) {
+						db.low
+							.get('users')
+							.find({id: id})
+							.assign({notify: false})
+							.write();
+					}
 				});
 			});
 	});
