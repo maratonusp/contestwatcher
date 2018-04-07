@@ -32,8 +32,8 @@ let process_final = function(ratings, ev, contest_id) {
 			let msg = 'Ratings for ' + html_msg.make_link(ev.name, ev.url) + ' are out!';
 			let rs = []; // ratings for handles from user
 			user.cf_handles.forEach((h) => {
-				if(mp.has(h))
-					rs.push(mp.get(h));
+				if(mp.has(h.toLowerCase()))
+					rs.push(mp.get(h.toLowerCase()));
 			});
 			if(rs.length === 0)
 				return;
