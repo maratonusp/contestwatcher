@@ -20,6 +20,19 @@ let contest_msg_all = function(msg, contest_id) {
 		.forEach((id) => { bot.sendSimpleHtml(id, msg); });
 };
 
+let title = function(rating) {
+	if (rating < 1200) return 'Newbie';
+	if (rating < 1400) return 'Pupil';
+	if (rating < 1600) return 'Specialist';
+	if (rating < 1900) return 'Expert';
+	if (rating < 2100) return 'Candidate Master';
+	if (rating < 2300) return 'Master';
+	if (rating < 2400) return 'International Master';
+	if (rating < 2600) return 'Grandmaster';
+	if (rating < 3000) return 'International Grandmaster';
+	else							 return 'Legendary Grandmaster';
+}
+
 /* Called when ratings are changed */
 let process_final = function(ratings, ev, contest_id) {
 	const mp = new Map();
@@ -40,7 +53,15 @@ let process_final = function(ratings, ev, contest_id) {
 			rs.sort((a, b) => a.rank - b.rank);
 			rs.forEach((r) => {
 				let prefix = "";
-				if(r.newRating >= r.oldRating) prefix = "+";
+				let oldTitle = title(r.oldRating);
+				let newTitle = title(r.newRating);
+				if(r.newRating >= r.oldRating) {
+					prefix = "+";
+					if (newTitle !== oldTitle) {
+						let article = `a${newTitle[0] === 'E' ? 'n' : (newTitle[0] === 'I' ? 'n' : '')}`;	
+						r.handle += `is now ${article} ${newTitle}!`;
+					}
+				}
 				msg += '\n\n<b>' + html_msg.escape(r.handle) + '</b>\n' + html_msg.escape(r.oldRating + ' → '+ r.newRating + ' (' + prefix + (r.newRating - r.oldRating) + ')');
 			});
 			bot.sendMessage(user.id, msg, { parse_mode: 'html', disable_web_page_preview: true });
