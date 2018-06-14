@@ -1,6 +1,9 @@
 # ContestWatcherBot
 ContestWatcherBot is a Telegram bot that keeps track of all the major online programming contests. It sends you notifications one day and one hour before each event. Try it your self at https://t.me/contestwatcherbot
 
+## Contributions
+Unfortunately, we have stalled the development for this bot and are not merging pull requests. You are welcome to fork this project and apply any features you wish.
+
 ## Judges
 Currently we support the following websites:
 - [AtCoder](https://atcoder.jp/)
