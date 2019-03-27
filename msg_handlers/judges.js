@@ -16,7 +16,7 @@ judges.init = function() {
 		if (pars.length < 2) {
 			response = "No judge specified.";
 		} else {
-			let user = db.user.get(message.chat.id);
+			let user = db.user.get(message.chat);
 			let judge = pars[1];
 
 			let ignored = user
@@ -44,7 +44,7 @@ judges.init = function() {
 		if (pars.length < 2) {
 			response = "No judge specified.";
 		} else {
-			let user = db.user.get(message.chat.id);
+			let user = db.user.get(message.chat);
 			let judge = pars[1];
 
 			let ignored = user
@@ -67,7 +67,7 @@ judges.init = function() {
 
 	/* List all judges and their status */
 	bot.onText(/^\/judges(@\w+)*$/m, (message) => {
-		let user = db.user.get(message.chat.id);
+		let user = db.user.get(message.chat);
 
 		let response = "You can /enable or /disable judges with the commands as you wish. Try typing /enable calendar.\n\n";
 		response += "Supported Judges: \n"

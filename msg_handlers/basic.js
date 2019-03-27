@@ -12,7 +12,7 @@ start_stop.init = function() {
 		if (msg.migrate_from_chat_id !== undefined)
 			db.user.migrate(msg.migrate_from_chat_id, msg.chat.id);
 		// mark last activity
-		db.user.get(msg.chat.id).set('last_activity', Date.now()).write();
+		db.user.get(msg.chat).set('last_activity', Date.now()).write();
 	});
 
 
@@ -20,7 +20,7 @@ start_stop.init = function() {
 		let response = "";
 
 		let id = message.chat.id;
-		let user = db.user.get(id);
+		let user = db.user.get(message.chat);
 
 		if (user.get('notify').value() === true) {
 			response = "Looks like you're already registered for reminders. ";
@@ -37,7 +37,7 @@ start_stop.init = function() {
 	Bot.bot.onText(/^\/stop(@\w+)*$/m, (message) => {
 		let response = "";
 
-		let user = db.user.get(message.chat.id);
+		let user = db.user.get(message.chat);
 
 		if (user.get('notify').value() === false) {
 			response = "Looks like you're already not registered for reminders. ";

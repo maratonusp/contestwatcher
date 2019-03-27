@@ -35,7 +35,7 @@ contest_list.init = function() {
 	const bot = Bot.bot;
 
 	bot.onText(/^\/running(@\w+)*$/, (message) => {
-		const user = db.user.get(message.chat.id);
+		const user = db.user.get(message.chat);
 		const maxContests = 7;
 		let validContests = 0;
 		let result = "";
@@ -71,7 +71,7 @@ contest_list.init = function() {
 	});
 
 	bot.onText(/^\/upcoming(@\w+)*$/, (message) => {
-		const user = db.user.get(message.chat.id);
+		const user = db.user.get(message.chat);
 		const maxContests = 7;
 		let validContests = 0;
 		let result = "";

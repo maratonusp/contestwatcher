@@ -23,7 +23,7 @@ function add_handles(message) {
 		return;
 	}
 	const emitter = new EventEmitter();
-	const user = db.user.get(message.chat.id);
+	const user = db.user.get(message.chat);
 
 	emitter.on('add', (handles, wrong_handles) => {
 		Array.from(handles).forEach((h) => user.get('cf_handles').push(h).write());
@@ -87,7 +87,7 @@ function add_handles(message) {
 
 /* Lists added CF handles */
 function list_handles(message) {
-	const user = db.user.get(message.chat.id);
+	const user = db.user.get(message.chat);
 	let msg;
 	if(!user.has('cf_handles').value() || user.get('cf_handles').size().value() == 0)
 		msg = "No Codeforces handles.";
@@ -102,7 +102,7 @@ function rem_handles(message) {
 	if(message.text.indexOf(' ') === -1)
 		msg = "No handles to remove.";
 	else {
-		const user = db.user.get(message.chat.id);
+		const user = db.user.get(message.chat);
 		const hs = new Set(message.text.slice(message.text.indexOf(' ') + 1).toLowerCase().split(' '))
 		if(!user.has('cf_handles').value())
 			user.set('cf_handles', []).write();
