@@ -27,7 +27,7 @@ module.exports = {
 
                     contest = {
                         judge: 'RPC',
-                        name: name,
+                        name: 'RPC - ' + name,
                         url: "http://registro.redprogramacioncompetitiva.com/contests",
                         time: moment.tz(time, 'YYYY-MM-DDTHH:mm:ssZ', 'UTC').toDate(),
                         duration: 5*3600
