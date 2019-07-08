@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Watches online judges for contests",
   "main": "index.js",
-  "repository": "maratonime/contestwatcher",
+  "repository": "naumazeredo/contestwatcher",
   "devDependencies": {
     "chai": "^4.1.2",
     "rewire": "^3.0.2",

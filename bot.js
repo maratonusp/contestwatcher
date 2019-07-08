@@ -33,6 +33,8 @@ Bot.create_bot = function() {
 
 	Bot.bot = bot;
 	Bot.mq = new mq.MessageQueue(Bot.sendMessageToTelegram);
+
+	Bot.sendMessage(utils.admin_id, "<code>Booting up.</code>", {parse_mode: 'html'});
 };
 
 // Pushes message to MessageQueue
