@@ -1,0 +1,15 @@
+[Unit]
+Description=ContestWatcherBot
+After=network.target
+
+[Service]
+ExecStart=/home/cw/contestwatcher/app.js
+Restart=always
+User=cw
+Group=cw
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=TELEGRAM_TOKEN=<token>
+WorkingDirectory=/home/cw/contestwatcher
+
+[Install]
+WantedBy=multi-user.target
