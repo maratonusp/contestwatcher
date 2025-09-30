@@ -1,5 +1,5 @@
 const logger = require('../logger');
-const http = require('http');
+const https = require('https');
 const EventEmitter = require('events');
 const schedule = require('node-schedule');
 const qs = require('querystring');
@@ -16,8 +16,9 @@ cf_api.call_cf_api = function(name, args, retry_times) {
 
 	let try_;
 	try_= function(times) {
-		logger.info('CF request: ' + 'http://codeforces.com/api/' + name + '?' + qs.stringify(args));
-		http.get('http://codeforces.com/api/' + name + '?' + qs.stringify(args), (res) => {
+		const url = 'https://codeforces.com/api/' + name + '?' + qs.stringify(args);
+		logger.info('CF request: ' + url);
+        https.get(url, (res) => {
 			if (res.statusCode !== 200) {
 				res.resume();
 				if(times > 0) try_(times - 1);
