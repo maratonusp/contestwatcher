@@ -62,7 +62,7 @@ let process_ratings = function(ev, contest_id) {
 
 /* Called when system testing starts, checks for end of system testing */
 let process_systest = function(ev, contest_id) {
-	contest_msg_all('System testing has started for ' + html_msg.make_link(ev.name, ev.url) + '.', contest_id);
+	// contest_msg_all('System testing has started for ' + html_msg.make_link(ev.name, ev.url) + '.', contest_id);
 	cfAPI.wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
 		/* condition */ (obj) => obj.contest.phase === 'FINISHED',
 		/* callback */  () => process_ratings(ev, contest_id));
@@ -70,7 +70,7 @@ let process_systest = function(ev, contest_id) {
 
 /* Called when contest ends, checks for start of system testing */
 let process_contest_end = function(ev, contest_id) {
-	contest_msg_all(html_msg.make_link(ev.name, ev.url) + ' has just ended. Waiting for system testing.', contest_id);
+	// contest_msg_all(html_msg.make_link(ev.name, ev.url) + ' has just ended. Waiting for system testing.', contest_id);
 	cfAPI.wait_for_condition_on_api_call('contest.standings', {contestId: contest_id, from: 1, count: 1},
 		/* condition */ (obj) => obj.contest.phase === 'SYSTEM_TEST' || obj.contest.phase === 'FINISHED',
 		/* callback */  () => process_systest(ev, contest_id));
